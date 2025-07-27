@@ -1,0 +1,21 @@
+{
+    "name": "SnapCore",
+    "version": "1.0.0",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/src/app.js",
+        "dev": "ts-node src/app.ts"
+    },
+      "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+    "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.15.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+    }
+}
