@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { fetcher } from "../../utils/fetcher";
+import type { FetcherOptions } from "../../types/FetcherOptions";
 import "./CreatePost.css";
 
 const MAX_TEXT = 1000;
@@ -54,7 +55,7 @@ export const CreatePost = () => {
 
     setError(null);
 
-    const payload: any = {
+    const payload: FetcherOptions["body"] = {
       text: text || undefined,
       images: images.length > 0 ? images.map((img) => img.name) : undefined,
     };
@@ -68,8 +69,14 @@ export const CreatePost = () => {
       setImages([]);
       setSuccess("Your post was uploaded successfully!");
       setTimeout(() => setSuccess(null), 5000);
-    } catch (err: any) {
-      setError(err?.error || "Failed to create post.");
+    } catch (err: unknown) {
+      if (typeof err === "object" && err !== null && "error" in err) {
+        setError((err as { error?: string }).error || "Failed to create post.");
+      } else if (typeof err === "string") {
+        setError(err);
+      } else {
+        setError("Failed to create post.");
+      }
     }
   };
 
