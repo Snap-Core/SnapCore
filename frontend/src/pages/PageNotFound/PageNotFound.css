@@ -1,0 +1,30 @@
+.snapcore-notfound {
+  text-align: center;
+  margin-top: 4rem;
+  padding: 2rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  background: rgba(36,36,36,0.95);
+  border-radius: 1.5rem;
+  box-shadow: 8px 8px 32px 0 rgba(0,0,0,0.10);
+}
+
+.snapcore-notfound h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #ef4444;
+}
+
+.snapcore-notfound p {
+  color: #b3b3b3;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.snapcore-notfound-link {
+  color: #61dafb;
+  text-decoration: underline;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
