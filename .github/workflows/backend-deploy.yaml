@@ -23,8 +23,8 @@ jobs:
       - name: Write server.key from secret
         run: |
           mkdir -p ./server
-          echo "${{ secrets.SERVER_PKEY }}" > ./server/server.key
-          chmod 600 ./server/server.key
+          echo "${{ secrets.SERVER_PKEY }}" > ./backend/server.key
+          chmod 600 ./backend/server.key
 
       - name: Copy files to EC2 with scp
         uses: appleboy/scp-action@v1
@@ -33,8 +33,8 @@ jobs:
           username: ${{ vars.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          source: "./server/"
-          target: "/home/${{ vars.EC2_USER }}/cb-api-server/"
+          source: "./backend/"
+          target: "/home/${{ vars.EC2_USER }}/snapcore-server/"
           rm: true
 
       - name: Run remote commands on EC2 and Configure Nginx
@@ -47,7 +47,7 @@ jobs:
           script: |
             API_DOMAIN="${{ vars.API_DOMAIN }}"
             CERTBOT_EMAIL="${{ secrets.CERTBOT_EMAIL }}"
-            APP_DIR="/home/${{ vars.EC2_USER }}/cb-api-server/server"
+            APP_DIR="/home/${{ vars.EC2_USER }}/snapcore-server/backend"
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
             echo "--- Deploying to EC2: $(pwd) ---"
@@ -74,7 +74,7 @@ jobs:
             fi
 
             echo "Writing environment variables to .env..."
-            cat <<EOF > "$APP_DIR/.env.production"
+            cat <<EOF > "$APP_DIR/.env"
             NODE_ENV=production
             PORT=3000
             DATABASE_URL=${{ secrets.DATABASE_URL }}
@@ -86,7 +86,7 @@ jobs:
 
             # Install app dependencies
             echo "Installing app dependencies..."
-            npm ci
+            npm install
 
             # Build the app
             echo "Building the app..."
@@ -117,8 +117,12 @@ jobs:
                 listen [::]:80;
                 server_name $API_DOMAIN;
 
+                # serve static files from the frontend directory
+                root /var/www/frontend;
+                index index.html;
+
                 # Proxy API requests to Node.js backend
-                location / {
+                location /api {
                     proxy_pass http://localhost:3000;
                     proxy_http_version 1.1;
                     proxy_set_header Upgrade \$http_upgrade;
@@ -129,16 +133,7 @@ jobs:
                     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                     proxy_set_header X-Forwarded-Proto \$scheme;
                 }
-            }
-
-            server {
-                listen 80;
-                listen [::]:80;
-                server_name $WEB_DOMAIN;
-
-                root /var/www/frontend;
-                index index.html;
-
+                
                 location / {
                     try_files \$uri /index.html;
                 }
@@ -171,7 +166,7 @@ jobs:
             if pm2 show snapcore-api &> /dev/null; then
               pm2 restart snapcore-api
             else
-              pm2 start server.js --name snapcore-api
+              pm2 start app.js --name snapcore-api
             fi
             pm2 save
 
