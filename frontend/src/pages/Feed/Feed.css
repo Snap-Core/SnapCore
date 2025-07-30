@@ -1,5 +1,9 @@
 .feed-container {
-  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 80%;
+  /* max-width: 700px; */
   margin: 2rem auto;
   padding: 0 1rem;
 }
@@ -7,7 +11,7 @@
 .feed-post {
   background: #fff;
   border-radius: 1rem;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.06);
   margin-bottom: 2rem;
   padding: 1.5rem;
 }
@@ -40,7 +44,7 @@
   border-radius: 0.5rem;
   border: 1px solid #e5e5e5;
   background: #f3fef6;
-  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.04);
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.2s;
   margin-bottom: 0.5rem;
 }
@@ -77,4 +81,51 @@
   text-align: center;
   color: #888;
   margin-top: 2rem;
+}
+
+.post-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fff;
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.post-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 0.75rem;
+}
+
+.post-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.post-username {
+  font-weight: bold;
+  color: #333;
+  text-decoration: none;
+}
+
+.post-time {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.post-content {
+  margin: 0.5rem 0;
+}
+
+.post-image {
+  max-width: 100%;
+  border-radius: 6px;
+  margin-top: 0.5rem;
 }

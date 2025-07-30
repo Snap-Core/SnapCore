@@ -1,6 +1,7 @@
 .user-profile-container {
   padding: 2rem;
-  max-width: 90%;
+  max-width: 80%;
+  min-height: 100vh;
   margin: auto;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   overflow-y: auto;

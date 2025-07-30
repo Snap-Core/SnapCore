@@ -3,4 +3,9 @@ export type Post = {
   text?: string;
   images?: string[];
   createdAt: string;
+  user?: {
+    username?: string;
+    name?: string;
+    profilePic?: string;
+  };
 };

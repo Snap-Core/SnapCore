@@ -1,66 +1,71 @@
-import React from 'react';
+import { useEffect, useState } from "react";
 import './UserProfile.css';
-import profilePic from '../../assets/profile-pic.jpg';
+import type { User } from "../../types/User";
+import { useParams } from "react-router-dom";
+import { Feed } from "../Feed/Feed";
 import genericProfilePic from '../../assets/generic-profile-p.jpg';
-import post1 from '../../assets/post1.jpg';
-import post2 from '../../assets/post2.jpg';
-import post3 from '../../assets/post1.jpg';
-import post4 from '../../assets/post2.jpg';
-
-const mockUser = {
-    username: 'john_doe',
-    name: 'John Doe',
-    bio: 'Photographer & World Traveler',
-    profilePic: profilePic,
-    followers: 120,
-    following: 80,
-};
-
-const mockPosts = [
-    {
-        id: 1,
-        image: post1,
-        caption: "Exploring the mountains",
-    },
-    {
-        id: 2,
-        image: post1,
-        caption: "Sunset by the lake",
-    },
-    {
-        id: 3,
-        image: post2,
-        caption: "City vibes",
-    },
-    {
-        id: 4,
-        image: post3,
-        caption: "Exploring the mountains",
-    },
-    {
-        id: 5,
-        image: post4,
-        caption: "Sunset by the lake",
-    },
-    {
-        id: 6,
-        image: "https://source.unsplash.com/random/300x300?sig=3",
-        caption: "City vibes",
-    },
-];
+import { fetcher } from "../../utils/fetcher";
+import { mockUsers } from "../../services/mockPosts";
 
 export const UserProfile = () => {
+    const { username } = useParams<{ username: string }>();
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    // useEffect(() => {
+    //     if (!username) return;
+
+    //     fetcher(`/users/${username}`)
+    //         .then((data: User) => {
+    //             setUser(data);
+    //             setLoading(false);
+    //         })
+    //         .catch((err) => {
+    //             console.error("Failed to fetch user", err);
+    //             setLoading(false);
+    //         });
+    // }, [username]);
+
+
+    // mock user
+    useEffect(() => {
+        if (!username) return;
+        setLoading(true);
+        const foundUser = mockUsers.find((u) => u.username === username);
+
+        if (foundUser) {
+            setUser(foundUser);
+        } else {
+            console.warn("No user found for username:", username);
+            setUser(null);
+        }
+        setLoading(false);
+    }, [username]);
+
+
+    if (loading) {
+        return <div className="user-profile-container">Loading user profile...</div>;
+    }
+
+    if (!user) {
+        return <div className="user-profile-container">User not found</div>;
+    }
+
     return (
         <div className="user-profile-container">
             <div className="user-header">
-                <img src={mockUser.profilePic} alt={genericProfilePic} className="profile-pic" />
+                <img
+                    src={user.profilePic || genericProfilePic}
+                    alt="Profile"
+                    className="profile-pic"
+                />
                 <div className="user-info">
-                    <h2>{mockUser.name}</h2>
-                    <p className="username">@{mockUser.username}</p>
-                    <p className="bio">{mockUser.bio}</p>
+                    <h2>{user.name}</h2>
+                    <p className="username">@{user.username}</p>
+                    <p className="bio">{user.bio}</p>
                     <div className="follow-info">
-                        <span><strong>{mockUser.followers}</strong> Followers</span>
-                        <span><strong>{mockUser.following}</strong> Following</span>
+                        <span><strong>{user.followers}</strong> Followers</span>
+                        <span><strong>{user.following}</strong> Following</span>
                     </div>
                     <button className="follow-button">Follow</button>
                 </div>
@@ -68,14 +73,7 @@ export const UserProfile = () => {
 
             <div className="user-posts">
                 <h3>Posts</h3>
-                <div className="post-gallery">
-                    {mockPosts.map((post) => (
-                        <div key={post.id} className="post-item">
-                            <img src={post.image} alt="Post" />
-                            <p>{post.caption}</p>
-                        </div>
-                    ))}
-                </div>
+                <Feed username={user.username} />
             </div>
         </div>
     );
