@@ -9,6 +9,7 @@ import { PrivateRoute } from "./auth/PrivateRoute";
 import { useAuth } from "./auth/useAuth";
 import { GoogleLoginButton } from "./components/GoogleLoginButton";
 import { LogoutButton } from "./components/LogoutButton";
+import { UserProfile } from "./pages/UserProfile/UserProfile";
 
 const TopBar = () => {
   const { user } = useAuth();
@@ -28,12 +29,15 @@ export const App = () => (
   <AuthProvider>
     <Router>
       <TopBar />
+      <div className="page-content">
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/feed" element={<Feed />} />
         <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
         <Route path="*" element={<PageNotFound />} />
+          <Route path="/profile/:username" element={<UserProfile />} />
       </Routes>
-    </Router>
+      </div>
+  </Router>
   </AuthProvider>
 );

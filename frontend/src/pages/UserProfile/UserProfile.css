@@ -1,0 +1,114 @@
+.user-profile-container {
+  padding: 2rem;
+  max-width: 80%;
+  min-height: 100vh;
+  margin: auto;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  overflow-y: auto;
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 1.5rem;
+}
+
+.profile-pic {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #999;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  /* background-color: #ccc; */
+}
+
+.user-info h2 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.username {
+  color: #777;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+.bio {
+  margin-top: 8px;
+  color: #333;
+}
+
+.follow-info {
+  margin-top: 10px;
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.follow-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1.2rem;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.follow-button:hover {
+  background-color: #4338ca;
+}
+
+.user-posts {
+  margin-top: 2rem;
+}
+
+.user-posts h3 {
+  margin-bottom: 1rem;
+}
+
+.post-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.post-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background-color: #fafafa;
+  padding: 0.5rem;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* .post-item:hover {
+  transform: scale(1.02);
+} */
+
+.post-item img {
+  width: 100%;
+  max-width: 500px;
+  max-height: 500px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.post-item p {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.user-info h2,
+.user-posts h3 {
+  color: black !important;
+}
