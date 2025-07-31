@@ -1,0 +1,69 @@
+name: Install Server Tools
+
+on:
+  workflow_dispatch:
+
+jobs:
+  install-tools:
+    name: Install Node, PM2, MongoDB, and Neo4j via Docker on EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH into EC2 and install tools
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ vars.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Update system
+            sudo yum update -y
+
+            # Install Node.js and npm
+            sudo yum install -y nodejs npm
+            sudo npm install -g pm2
+
+            # Install Docker
+            sudo yum install -y docker
+            sudo systemctl start docker
+            sudo usermod -a -G docker ec2-user
+
+            # Start or run MongoDB container
+            if sudo docker ps -a --format '{{.Names}}' | grep -qw mongodb; then
+              echo "MongoDB container already exists"
+              if ! sudo docker ps --format '{{.Names}}' | grep -qw mongodb; then
+                echo "Starting stopped MongoDB container"
+                sudo docker start mongodb
+              else
+                echo "MongoDB is already running"
+              fi
+            else
+              echo "Creating MongoDB container"
+              sudo docker run -d \
+                --name mongodb \
+                -p 27017:27017 \
+                -e MONGO_INITDB_ROOT_USERNAME=admin \
+                -e MONGO_INITDB_ROOT_PASSWORD=secret \
+                mongo:6.0
+            fi
+
+            # Start or run Neo4j container
+            if sudo docker ps -a --format '{{.Names}}' | grep -qw neo4j; then
+              echo "Neo4j container already exists"
+              if ! sudo docker ps --format '{{.Names}}' | grep -qw neo4j; then
+                echo "Starting stopped Neo4j container"
+                sudo docker start neo4j
+              else
+                echo "Neo4j is already running"
+              fi
+            else
+              echo "Creating Neo4j container"
+              sudo docker run -d \
+                --name neo4j \
+                -p 7474:7474 -p 7687:7687 \
+                -e NEO4J_AUTH=neo4j/testpassword \
+                neo4j:5
+            fi
+
+            # Show running containers
+            sudo docker ps
