@@ -10,17 +10,35 @@ import { useAuth } from "./auth/useAuth";
 import { GoogleLoginButton } from "./components/GoogleLoginButton";
 import { LogoutButton } from "./components/LogoutButton";
 import { UserProfile } from "./pages/UserProfile/UserProfile";
+import "./App.css";
+import genericProfilePic from "../src/assets/generic-profile-p.jpg"
 
 const TopBar = () => {
   const { user } = useAuth();
   return (
-    <nav style={{ padding: "1rem", background: "#fff", borderBottom: "1px solid #eee", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <nav className="navbar">
       <div>
         <Link to="/" style={{ marginRight: 16 }}>Home</Link>
         <Link to="/feed" style={{ marginRight: 16 }}>Feed</Link>
         <Link to="/create-post" style={{ marginRight: 16 }}>Create Post</Link>
       </div>
-      {user ? <LogoutButton /> : <GoogleLoginButton />}
+      {/* {user ? <LogoutButton /> : <GoogleLoginButton />} */}
+      <div className="nav-right">
+        {user ? (
+          <>
+            <Link to={`/profile/${user.username}`}>
+              <img
+                src={user.profilePic || genericProfilePic }
+                alt={user.name}
+                className="avatar"
+              />
+            </Link>
+            <LogoutButton />
+          </>
+        ) : (
+          <GoogleLoginButton />
+        )}
+      </div>
     </nav>
   );
 };
