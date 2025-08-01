@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
 import session from 'express-session';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -9,6 +8,7 @@ import healthRouter from './routes/health';
 import authRouter from './routes/auth';
 import postRouter from './routes/post';
 import { connectToDatabase } from './config/database';
+import inboxRouter from './routes/inbox';
 
 dotenv.config();
 
@@ -42,6 +42,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/posts', postRouter);
+app.use('/inbox', inboxRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
