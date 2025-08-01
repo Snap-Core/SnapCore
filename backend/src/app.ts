@@ -9,6 +9,8 @@ import authRouter from './routes/auth';
 import postRouter from './routes/post';
 import { connectToDatabase } from './config/database';
 import inboxRouter from './routes/inbox';
+import fedelikeRouter from './routes/federatedlikes';
+import localLikeRouter from './routes/localLikes';
 
 dotenv.config();
 
@@ -43,6 +45,8 @@ app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/posts', postRouter);
 app.use('/inbox', inboxRouter);
+app.use('/api/likes', fedelikeRouter);
+app.use('/api/likes', localLikeRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
