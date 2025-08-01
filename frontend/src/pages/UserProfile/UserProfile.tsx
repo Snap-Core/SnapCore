@@ -4,7 +4,6 @@ import type { User } from "../../types/User";
 import { useParams } from "react-router-dom";
 import { Feed } from "../Feed/Feed";
 import genericProfilePic from '../../assets/generic-profile-p.jpg';
-import { fetcher } from "../../utils/fetcher";
 import { mockUsers } from "../../services/mockPosts";
 
 export const UserProfile = () => {

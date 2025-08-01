@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./Feed.css";
 import type { Post } from "../../types/Post";
-import vpnExplained from "../../assets/db.jpg";
-import { fetcher } from "../../utils/fetcher";
 import { formatRelativeTime } from "../../utils/timeUtils";
 import genericProfilePic from "../../assets/generic-profile-p.jpg";
 import { mockPosts } from "../../services/mockPosts";
