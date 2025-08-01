@@ -42,6 +42,10 @@ export const createPost = async (req: Request, res: Response) => {
     const { content, actor } = req.body;
     let mediaUrl, mediaType;
 
+    if (!content || !actor) {
+      return res.status(400).json({ message: 'Missing required fields: content or actor' });
+    }
+
     if (req.file) {
       mediaUrl = `/uploads/${req.file.filename}`;
       const ext = path.extname(req.file.originalname).toLowerCase();
@@ -59,7 +63,7 @@ export const createPost = async (req: Request, res: Response) => {
 
     res.status(201).json(savedPost);
   } catch (err) {
-    res.status(500).json({ message: 'Error creating post' });
+    res.status(500).json({ message: 'Could not create a post' });
   }
 };
 
@@ -68,6 +72,21 @@ export const getAllPosts = async (_req: Request, res: Response) => {
     const posts = await PostRepo.getAllPosts();
     res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching posts' });
+    res.status(500).json({ message: 'Could not fetch posts' });
+  }
+};
+
+export const getPostsByActor = async (req: Request, res: Response) => {
+  try {
+    const actorUrl = decodeURIComponent(req.params.actorUrl);
+    const posts = await PostRepo.getPostsByActor(actorUrl);
+
+    if (!posts.length) {
+      return res.status(404).json({ message: 'No posts found for this actor' });
+    }
+
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ message: 'Error Could not fetch posts by actor' });
   }
 };
