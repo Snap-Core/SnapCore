@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import './UserProfile.css';
 import type { User } from "../../types/User";
 import { useParams } from "react-router-dom";
@@ -7,10 +7,16 @@ import genericProfilePic from '../../assets/generic-profile-p.jpg';
 import { fetcher } from "../../utils/fetcher";
 import { mockUsers } from "../../services/mockPosts";
 
+const currentUser = {
+    username: "john_doe", // Simulate logged-in user
+};
+
 export const UserProfile = () => {
     const { username } = useParams<{ username: string }>();
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
 
     // useEffect(() => {
     //     if (!username) return;
@@ -25,7 +31,6 @@ export const UserProfile = () => {
     //             setLoading(false);
     //         });
     // }, [username]);
-
 
     // mock user
     useEffect(() => {
@@ -42,6 +47,34 @@ export const UserProfile = () => {
         setLoading(false);
     }, [username]);
 
+    const handleFollowToggle = () => {
+        setIsFollowing((prev) => !prev);
+        setUser((prev) =>
+            prev
+                ? {
+                    ...prev,
+                    followers: (prev.followers ?? 0) + (isFollowing ? -1 : 1),
+                }
+                : null
+        );
+    };
+
+    const handleProfilePicChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setNewProfilePic(url);
+
+            setUser((prev) =>
+                prev
+                    ? {
+                        ...prev,
+                        profilePic: url,
+                    }
+                    : null
+            );
+        }
+    };
 
     if (loading) {
         return <div className="user-profile-container">Loading user profile...</div>;
@@ -51,14 +84,27 @@ export const UserProfile = () => {
         return <div className="user-profile-container">User not found</div>;
     }
 
+    const isOwnProfile = currentUser?.username === user.username;
+
     return (
         <div className="user-profile-container">
             <div className="user-header">
-                <img
-                    src={user.profilePic || genericProfilePic}
-                    alt="Profile"
-                    className="profile-pic"
-                />
+                <div className="profile-pic-wrapper">
+                    <img
+                        src={newProfilePic || user.profilePic || genericProfilePic}
+                        alt="Profile"
+                        className="profile-pic"
+                    />
+
+                    {isOwnProfile && (
+                        <div className="edit-pic-overlay" title="Upload new profile picture">
+                            <label className="edit-pic-label">
+                                Change
+                                <input type="file" accept="image/*" onChange={handleProfilePicChange} hidden />
+                            </label>
+                        </div>
+                    )}
+                </div>
                 <div className="user-info">
                     <h2>{user.name}</h2>
                     <p className="username">@{user.username}</p>
@@ -67,7 +113,11 @@ export const UserProfile = () => {
                         <span><strong>{user.followers}</strong> Followers</span>
                         <span><strong>{user.following}</strong> Following</span>
                     </div>
-                    <button className="follow-button">Follow</button>
+                    {!isOwnProfile && (
+                        <button className="follow-button" onClick={handleFollowToggle}>
+                            {isFollowing ? "Following" : "Follow"}
+                        </button>
+                    )}
                 </div>
             </div>
 

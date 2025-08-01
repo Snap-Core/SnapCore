@@ -38,6 +38,45 @@ export const mockUsers: User[] = [
   },
 ];
 
+export const mockComments = [
+  {
+    id: "c1",
+    user: "alice",
+    text: "Great post! Really enjoyed reading this.",
+  },
+  {
+    id: "c2",
+    user: "bob",
+    text: "Interesting perspective, thanks for sharing.",
+  },
+  {
+    id: "c3",
+    user: "charlie",
+    text: "Could you elaborate more on your last point?",
+  },
+  {
+    id: "c4",
+    user: "diana",
+    text: "🔥🔥🔥",
+  },
+  {
+    id: "c5",
+    user: "eric",
+    text: "I completely agree with this.",
+  },
+  {
+    id: "c6",
+    user: "frank",
+    text: "This is a test comment to check if wrapping works properly. It should break into a new line if it's too long.",
+  },
+  {
+    id: "c7",
+    user: "grace",
+    text: "This made my day 😄",
+  },
+];
+
+
 export const mockPosts: Post[] = [
   {
     id: "p1",
@@ -45,6 +84,7 @@ export const mockPosts: Post[] = [
     images: [post1Img],
     createdAt: new Date(Date.now() - 1000 * 10).toISOString(), // 10s ago
     user: mockUsers[0],
+    comments: mockComments,
   },
   {
     id: "p2",

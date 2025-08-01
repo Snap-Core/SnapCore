@@ -29,6 +29,7 @@
 .page-content {
   padding-top: 50px;
   background: #f6f8fa;
+  min-height: 100vh;
 }
 
 .nav-links a {

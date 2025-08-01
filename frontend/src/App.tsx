@@ -28,7 +28,7 @@ const TopBar = () => {
           <>
             <Link to={`/profile/${user.username}`}>
               <img
-                src={user.profilePic || genericProfilePic }
+                src={user.profilePic || genericProfilePic}
                 alt={user.name}
                 className="avatar"
               />
@@ -48,14 +48,14 @@ export const App = () => (
     <Router>
       <TopBar />
       <div className="page-content">
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/feed" element={<Feed />} />
-        <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
-        <Route path="*" element={<PageNotFound />} />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/feed" element={<Feed />} />
+          <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
+          <Route path="*" element={<PageNotFound />} />
           <Route path="/profile/:username" element={<UserProfile />} />
-      </Routes>
+        </Routes>
       </div>
-  </Router>
+    </Router>
   </AuthProvider>
 );
