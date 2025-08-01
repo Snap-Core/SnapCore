@@ -189,7 +189,7 @@ export const Feed = ({ username }: FeedProps) => {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
 
             <div className="modal-header">
-              <h4>Comments</h4>
+              <h4>{selectedPost.comments?.length || 0} Comments</h4>
               <button
                 onClick={() => setShowComments(false)}
                 className="close-modal"
