@@ -1,0 +1,14 @@
+import Post from '../types/post';
+
+export const createPost = async (data: any) => {
+  const post = new Post(data);
+  return await post.save();
+};
+
+export const getAllPosts = async () => {
+  return await Post.find().sort({ createdAt: -1 });
+};
+
+export const getPostById = async (id: string) => {
+  return await Post.findById(id);
+};
