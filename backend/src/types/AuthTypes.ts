@@ -6,3 +6,13 @@ export type GoogleUserInfo = {
   error_description?: string;
   [key: string]: any;
 };
+
+declare module "express-session" {
+  interface SessionData {
+    user?: {
+      googleId: string;
+      userName: string;
+      email: string;
+    };
+  }
+}
