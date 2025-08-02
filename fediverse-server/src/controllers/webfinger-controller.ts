@@ -3,8 +3,7 @@ import {User} from "../../../shared/types/user";
 import {getBackendServer} from "../utils/backend-service";
 
 const fediverseServerUrl = 'http://localhost:4000'; // todo: better way of getting internal server
-const fediverseDomain = fediverseServerUrl.split('//')[1];
-
+const fediverseDomain = new URL(fediverseServerUrl).hostname;
 
 export const handleWebFinger = async (req: Request, res: Response) => {
   const resource = req.query.resource as string;
