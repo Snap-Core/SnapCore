@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./Feed.css";
 import type { Post } from "../../types/Post";
-import { fetcher } from "../../utils/fetcher";
+// import { fetcher } from "../../utils/fetcher";
 import { formatRelativeTime } from "../../utils/timeUtils";
 import genericProfilePic from "../../assets/generic-profile-p.jpg";
 import { mockPosts } from "../../services/mockPosts";
@@ -95,7 +95,7 @@ export const Feed = ({ username }: FeedProps) => {
     if (!commentText.trim() || !selectedPost) return;
 
     const newComment = {
-      id: uuidv4,
+      id: uuidv4(),
       user: currentUser?.username || "anonymous",
       text: commentText.trim(),
     };
