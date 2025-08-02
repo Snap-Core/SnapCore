@@ -3,16 +3,15 @@ import multerS3 from 'multer-s3';
 import path from 'path';
 import { S3Client } from '@aws-sdk/client-s3';
 
-const useS3 = process.env.USE_S3 === 'true';
-
 let storage: multer.StorageEngine;
 
-if (useS3) {
+if (process.env.USE_S3 === 'true') {
     const s3 = new S3Client({
         region: process.env.AWS_REGION!,
         credentials: {
             accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
             secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+            sessionToken: process.env.AWS_SESSION_TOKEN,
         },
     });
 
