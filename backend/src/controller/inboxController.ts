@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Post from '../types/post';
 import Like from '../types/likes';
+import Follow from '../types/follow';
 
 export const handleInboxPost = async (req: Request, res: Response) => {
   try {
@@ -80,6 +81,44 @@ export const handleInboxPost = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Error during Undo Like' });
   }
 }
+
+    if (activity.type === 'Follow') {
+      const { actor, object } = activity;
+
+      if (!actor || !object) {
+        return res.status(400).json({ message: 'Missing actor or object in Follow activity' });
+      }
+
+      const alreadyFollowing = await Follow.findOne({ actor, object });
+      if (alreadyFollowing) {
+        return res.status(409).json({ message: 'Actor already follows this user' });
+      }
+
+      const follow = new Follow({
+        actor,
+        object,
+        activityPubObject: activity
+      });
+
+      await follow.save();
+      return res.status(202).json({ message: 'Follow recorded successfully' });
+    }
+
+    if (activity.type === 'Undo' && activity.object?.type === 'Follow') {
+      const actor = activity.actor;
+      const object = activity.object.object;
+
+      if (!actor || !object) {
+        return res.status(400).json({ message: 'Invalid Undo Follow format' });
+      }
+
+      const result = await Follow.findOneAndDelete({ actor, object });
+      if (result) {
+        return res.status(202).json({ message: 'Follow undone successfully' });
+      } else {
+        return res.status(410).json({ message: 'Follow was already deleted or never existed' });
+      }
+    }
 
     return res.status(400).json({ message: 'Unsupported activity type' });
 
