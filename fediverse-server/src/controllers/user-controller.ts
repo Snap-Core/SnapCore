@@ -31,7 +31,7 @@ export const getPersonFromUsername = async (req: Request, res: Response) => {
 };
 
 export const getExternalUserPageFromUsername = async (req: Request, res: Response) => {
-  const { username, domain } = req.query;
+  const { username, domain } = req.query as { username: string; domain: string };
 
   if (!username || !domain) {
     return res.status(400).json({ error: 'Invalid get user request' });
