@@ -11,7 +11,9 @@ import { connectToDatabase } from './config/database';
 import inboxRouter from './routes/inbox';
 import fedelikeRouter from './routes/federatedLikes';
 import localLikeRouter from './routes/localLikes';
-import {User} from "../../shared/types/user";
+import { User } from "../../shared/types/user";
+
+import mediaRoutes from './routes/mediaRoutes';
 
 dotenv.config();
 
@@ -45,7 +47,7 @@ app.use(session({
   },
 }));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', mediaRoutes);
 
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
