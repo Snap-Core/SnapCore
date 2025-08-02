@@ -14,7 +14,7 @@ export function getPersonFromUser(user: User): Person {
     type: "Person",
     preferredUsername: user.username,
     name: user.displayName,
-    summary: user.summary,
+    summary: user.summary || '',
     inbox: `${actorId}/inbox`,
     outbox: `${actorId}/outbox`,
     followers: `${actorId}/followers`,
@@ -30,5 +30,15 @@ export function getPersonFromUser(user: User): Person {
       owner: actorId,
       publicKeyPem: user.publicKey
     }
+  };
+}
+
+export function getUserFromPerson(person: Person): User {
+  return {
+    username: person.preferredUsername || '',
+    displayName: person.name || '',
+    summary: person.summary || '',
+    publicKey: person.publicKey?.publicKeyPem || '',
+    profilePicUrl: person.icon?.url || ''
   };
 }
