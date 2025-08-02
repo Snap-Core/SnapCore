@@ -87,12 +87,8 @@
   background-color: #fafafa;
   padding: 0.5rem;
   border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
-/* .post-item:hover {
-  transform: scale(1.02);
-} */
 
 .post-item img {
   width: 100%;
@@ -111,4 +107,33 @@
 .user-info h2,
 .user-posts h3 {
   color: black !important;
+}
+
+.profile-pic-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.profile-pic {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+}
+
+.edit-pic-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  padding: 4px;
+}
+
+.edit-pic-label {
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
 }

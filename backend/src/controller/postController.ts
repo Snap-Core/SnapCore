@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as PostRepo from '../models/post';
 import path from 'path';
+import { getUploadedFileUrl } from '../utils/getFileUrl';
 
 const generateActivityPubNote = (
   actor: string,
@@ -47,7 +48,7 @@ export const createPost = async (req: Request, res: Response) => {
     }
 
     if (req.file) {
-      mediaUrl = `/uploads/${req.file.filename}`;
+      mediaUrl = getUploadedFileUrl(req) || '';
       const ext = path.extname(req.file.originalname).toLowerCase();
       mediaType = ['.jpg', '.jpeg', '.png', '.gif'].includes(ext) ? 'image' : 'video';
     }
