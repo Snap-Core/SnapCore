@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import fetch from "node-fetch";
 import dotenv from "dotenv";
 import { formatErrorResponse } from "../utils/formatErrorResponse";
 import { GoogleUserInfo } from "../types/AuthTypes";
