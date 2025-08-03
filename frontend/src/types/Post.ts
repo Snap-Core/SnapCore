@@ -4,10 +4,15 @@ export type Comment = {
   user: string;
 };
 
+export type MediaItem = {
+  url: string;
+  type: "image" | "video";
+};
+
 export type Post = {
   id: string;
   text?: string;
-  images?: string[];
+  media?: MediaItem[];
   createdAt: string;
   likes?: number;
   liked?: boolean;
