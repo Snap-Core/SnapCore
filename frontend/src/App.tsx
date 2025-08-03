@@ -12,14 +12,19 @@ import { LogoutButton } from "./components/LogoutButton";
 import { UserProfile } from "./pages/UserProfile/UserProfile";
 import "./App.css";
 import genericProfilePic from "../src/assets/generic-profile-p.jpg"
+import { useState } from "react";
 
-const TopBar = () => {
+type TopBarProps = {
+  onFeedClick: () => void;
+};
+const TopBar: React.FC<TopBarProps> = ({ onFeedClick }) => {
   const { user } = useAuth();
+
   return (
     <nav className="navbar">
       <div>
         <Link to="/" style={{ marginRight: 16 }}>Home</Link>
-        <Link to="/feed" style={{ marginRight: 16 }}>Feed</Link>
+        <Link to="/feed" onClick={onFeedClick} style={{ marginRight: 16 }}>Feed</Link>
         <Link to="/create-post" style={{ marginRight: 16 }}>Create Post</Link>
       </div>
       {/* {user ? <LogoutButton /> : <GoogleLoginButton />} */}
@@ -43,19 +48,27 @@ const TopBar = () => {
   );
 };
 
-export const App = () => (
-  <AuthProvider>
-    <Router>
-      <TopBar />
-      <div className="page-content">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/feed" element={<Feed />} />
-          <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
-          <Route path="*" element={<PageNotFound />} />
-          <Route path="/profile/:username" element={<UserProfile />} />
-        </Routes>
-      </div>
-    </Router>
-  </AuthProvider>
-);
+export const App = () => {
+  const [feedReloadKey, setFeedReloadKey] = useState(0);
+
+  const handleFeedClick = () => {
+    setFeedReloadKey((prev) => prev + 1);
+  };
+
+  return (
+    <AuthProvider>
+      <Router>
+        <TopBar onFeedClick={handleFeedClick} />
+        <div className="page-content">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/feed" element={<Feed reloadKey={feedReloadKey} />} />
+            <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
+            <Route path="*" element={<PageNotFound />} />
+            <Route path="/profile/:username" element={<UserProfile />} />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
+  );
+};
