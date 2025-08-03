@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { getPersonFromUser } from '../utils/convert-activity-pub-objects';
 import {User} from "../../../shared/types/user";
-import {getBackendServer} from "../utils/backend-service";
+import {requestBackendServer} from "../utils/backend-service";
 import {getExternalServer} from "../utils/external-federated-service";
 import {WebfingerResponse} from "../types/webfinger-response";
 import { Person } from '../types/person';
@@ -18,17 +18,23 @@ export const getPersonFromUsername = async (req: Request, res: Response) => {
       .json({ error: 'Invalid get user request' });
   }
 
-  const response = await getBackendServer(`users/${username}`);
-
-  if (!response.ok) {
-    return res.status(500).json({ error: 'Could not retrieve user from internal server' });
+  let user : User;
+  try {
+    user = await requestBackendServer(
+      `users/${username}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/activity+json',
+        },
+      });
+  } catch (error) {
+    return res.status(500).json('Could not retrieve user from backend server')
   }
 
-  const user : User = await response.json();
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
-
 
   const acceptHeader = req.headers.accept || '';
 

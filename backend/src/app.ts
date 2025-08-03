@@ -16,6 +16,7 @@ import {User} from "../../shared/types/user";
 import mediaRoutes from './routes/mediaRoutes';
 import {Community} from "../../shared/types/community";
 import {generateKeyPairForActor} from "./utils/key-pair-generation";
+import {requireAuth} from "./middleware/authMiddleware";
 
 dotenv.config();
 
@@ -31,8 +32,8 @@ app.use((req, res, next) => {
   const origin = req.header('Origin');
   if (origin === 'http://localhost:4000') {
     cors({
-  origin: 'http://localhost:4000',
-  credentials: false,
+      origin: 'http://localhost:4000',
+      credentials: true,
     })(req, res, next);
   } else {
     cors({
@@ -66,9 +67,8 @@ app.use('/api/likes', fedelikeRouter);
 app.use('/api/likes', localLikeRouter);
 app.use('/api/users', userRouter);
 
-// just for testing
-app.get("/users/:username", async (req, res) => {
-
+// todo: remove once implemented in a controller
+app.get("/users/:username", requireAuth, async (req, res, next) => {
   const username = req.params.username;
   const [publicKey, encryptedPrivateKey] = await generateKeyPairForActor(username);
 
@@ -85,8 +85,8 @@ app.get("/users/:username", async (req, res) => {
   return res.json(user);
 });
 
-// just for testing
-app.get("/communities/:handle", async (req, res) => {
+// todo: remove once implemented in a controller
+app.get("/communities/:handle", requireAuth, async (req, res, next) => {
   const handle = req.params.handle;
   const [publicKey, encryptedPrivateKey] = await generateKeyPairForActor(handle);
 

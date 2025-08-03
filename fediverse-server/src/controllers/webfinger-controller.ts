@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import {User} from "../../../shared/types/user";
-import {getBackendServer} from "../utils/backend-service";
+import {requestBackendServer} from "../utils/backend-service";
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -27,13 +27,20 @@ export const handleWebFinger = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Actor domain is not our domain' });
   }
 
-  const response = await getBackendServer(`users/${username}`);
+  let user : User;
 
-  if (!response.ok) {
-    return res.status(500).json({ error: 'Could not retrieve actor internally' });
+  try {
+    user = await requestBackendServer(
+      `users/${username}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/activity+json',
+        },
+      });
+  } catch (error) {
+    return res.status(500).json('Could not retrieve user from backend server')
   }
-
-  const user : User = await response.json();
 
   if (!user) {
     return res.status(404).json({ error: 'User not found' });

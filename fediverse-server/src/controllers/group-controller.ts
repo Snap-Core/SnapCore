@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import {getGroupFromCommunity} from '../utils/convert-activity-pub-objects';
-import {getBackendServer} from "../utils/backend-service";
+import {requestBackendServer} from "../utils/backend-service";
 import dotenv from 'dotenv';
 import {Community} from "../../../shared/types/community";
 
@@ -15,13 +15,20 @@ export const getGroupByHandle = async (req: Request, res: Response) => {
       .json({ error: 'Invalid get community request' });
   }
 
-  const response = await getBackendServer(`communities/${handle}`);
-
-  if (!response.ok) {
-    return res.status(500).json({ error: 'Could not retrieve community from internal server' });
+  let community : Community;
+  try {
+    community = await requestBackendServer(
+      `communities/${handle}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/activity+json',
+        },
+      });
+  } catch (error) {
+    return res.status(500).json('Could not retrieve community from backend server')
   }
 
-  const community : Community = await response.json();
   if (!community) {
     return res.status(404).json({ error: 'Community not found' });
   }
