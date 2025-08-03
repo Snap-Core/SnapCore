@@ -38,6 +38,11 @@ variable "instance_type" {
   default = "t3.medium"
 }
 
+variable "fediverse_instance_type" {
+  type    = string
+  default = "t3.micro"
+}
+
 variable "api_port" {
   type    = number
   default = 80
