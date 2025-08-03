@@ -76,12 +76,14 @@ jobs:
             echo "Writing environment variables to .env..."
             cat <<EOF > "$APP_DIR/.env"
             NODE_ENV=production
+            MONGO_URI=mongodb://localhost:27017/SnapCore
             PORT=3000
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            CA_CERT_PATH=ca.crt
-            SERVER_KEY_PATH=server.key
-            SERVER_CERT_PATH=server.crt
-            TIMEOUT=6000
+            CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            REDIRECT_URI=http://localhost:5173
+            TOKEN_ENDPOINT=https://oauth2.googleapis.com/token
+            TOKEN_INFO=https://oauth2.googleapis.com/tokeninfo
+            AUTH_ENDPOINT=https://accounts.google.com/o/oauth2/v2/auth
             EOF
 
             # Install app dependencies
