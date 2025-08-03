@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { getPersonFromUser } from '../utils/convert-activity-pub-objects';
 import {User} from "../../../shared/types/user";
 import {getBackendServer} from "../utils/backend-service";
-import {getExternalServer, getExternalServerUrl} from "../utils/external-federated-service";
+import {getExternalServer} from "../utils/external-federated-service";
 import {WebfingerResponse} from "../types/webfinger-response";
 import { Person } from '../types/person';
 import dotenv from 'dotenv';
@@ -48,7 +48,7 @@ export const getExternalPersonFromUsername = async (req: Request, res: Response)
     return res.status(400).json({ error: 'Invalid get user request' });
   }
 
-  const webfingerResponse = await getExternalServer(domain, `.well-known/webfinger?resource=acct:${username}@${domain}`);
+  const webfingerResponse = await getExternalServer(new URL(`https://${domain}`), `.well-known/webfinger?resource=acct:${username}@${domain}`);
 
   if (!webfingerResponse.ok) {
     return res.status(500).json({ error: 'Could not retrieve external actor' });
@@ -66,7 +66,7 @@ export const getExternalPersonFromUsername = async (req: Request, res: Response)
     return res.status(500).json({ error: 'Could not retrieve person url' });
   }
 
-  const personResponse = await getExternalServerUrl(personUrl, { Accept: 'application/activity+json' });
+  const personResponse = await getExternalServer(new URL(personUrl), '');
 
   if (!personResponse.ok) {
     return res.status(500).json({ error: 'Could not retrieve person object information' });
