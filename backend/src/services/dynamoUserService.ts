@@ -2,6 +2,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { GoogleUserInfo } from "../types/AuthTypes";
 import dotenv from 'dotenv';
+import {generateKeyPair} from "../utils/key-pair-generation";
 
 dotenv.config();
 
@@ -28,6 +29,8 @@ export async function createUserIfNotExists(user: GoogleUserInfo) {
   const existing = await findUserById(user.sub);
   if (existing) return existing;
 
+  const [publicKey, encryptedPrivateKey] = await generateKeyPair()
+
   const cmd = new PutCommand({
     TableName: tableName,
     Item: {
@@ -35,6 +38,8 @@ export async function createUserIfNotExists(user: GoogleUserInfo) {
       name: user.name,
       email: user.email,
       createdAt: new Date().toISOString(),
+      publicKey: publicKey,
+      encryptedPrivateKey: encryptedPrivateKey
     },
     ConditionExpression: "attribute_not_exists(id)",
   });

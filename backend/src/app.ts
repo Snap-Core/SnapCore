@@ -15,7 +15,7 @@ import userRouter from './routes/user';
 import {User} from "../../shared/types/user";
 import mediaRoutes from './routes/mediaRoutes';
 import {Community} from "../../shared/types/community";
-import {generateKeyPairForActor} from "./utils/key-pair-generation";
+import {generateKeyPair} from "./utils/key-pair-generation";
 import {requireAuth} from "./middleware/authMiddleware";
 
 dotenv.config();
@@ -70,7 +70,7 @@ app.use('/api/users', userRouter);
 // todo: remove once implemented in a controller
 app.get("/users/:username", requireAuth, async (req, res, next) => {
   const username = req.params.username;
-  const [publicKey, encryptedPrivateKey] = await generateKeyPairForActor(username);
+  const [publicKey, encryptedPrivateKey] = await generateKeyPair();
 
   const user: User = {
     id: `http://localhost:4000/users/${username}`,
@@ -88,7 +88,7 @@ app.get("/users/:username", requireAuth, async (req, res, next) => {
 // todo: remove once implemented in a controller
 app.get("/communities/:handle", requireAuth, async (req, res, next) => {
   const handle = req.params.handle;
-  const [publicKey, encryptedPrivateKey] = await generateKeyPairForActor(handle);
+  const [publicKey, encryptedPrivateKey] = await generateKeyPair();
 
   const community: Community = {
     id:`http://localhost:4000/groups/${handle}`,

@@ -1,13 +1,19 @@
 import { KMSClient, EncryptCommand } from '@aws-sdk/client-kms';
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const KMS_ALIAS = process.env.KMS_ALIAS!;
 
 const kmsClient = new KMSClient({ region: 'af-south-1' });
 
-export const encryptPrivateKey = async (privateKeyPem: string, actorIdentifier : string): Promise<string> => {
+export const encryptPrivateKey = async (privateKeyPem: string): Promise<string> => {
   const result = await kmsClient.send(new EncryptCommand({
-    KeyId: actorIdentifier,
-    Plaintext: Buffer.from(privateKeyPem),
+    KeyId: KMS_ALIAS,
+    Plaintext: Buffer.from(privateKeyPem,'utf-8'),
   }));
 
-  return result.CiphertextBlob!.toLocaleString('base64');
+  return Buffer.from(result.CiphertextBlob!).toString('base64');
+
 }
 

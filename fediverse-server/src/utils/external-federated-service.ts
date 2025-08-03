@@ -19,8 +19,7 @@ export const getExternalServer = async (
       // todo: throw error / do not allow
     }
 
-    const privateKey : string = await decryptPrivateKey(requestingActorEncryptedPrivateKey!)
-    console.log('privateKey', privateKey)
+    const privateKey: string = await decryptPrivateKey(requestingActorEncryptedPrivateKey!)
 
     headers = signRequest(
       new URL(baseUrl, path),
