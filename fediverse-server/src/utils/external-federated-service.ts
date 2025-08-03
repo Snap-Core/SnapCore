@@ -1,10 +1,12 @@
 import crypto from 'crypto';
 import { Request } from 'express';
+import {decryptPrivateKey} from "./kms-decryption";
 
 export const getExternalServer = async (
   baseUrl : URL,
   path : string = '',
   requestingActorUrl : URL | null = null,
+  requestingActorEncryptedPrivateKey : string | null = null,
   requiresHttpSignature : boolean = false) => {
   let headers : Record<string, string> = {
     Accept: 'application/activity+json',
@@ -13,16 +15,19 @@ export const getExternalServer = async (
   };
 
   if (requiresHttpSignature) {
-    if (!requestingActorUrl) {
+    if (!requestingActorUrl || !requestingActorEncryptedPrivateKey) {
       // todo: throw error / do not allow
     }
+
+    const privateKey : string = await decryptPrivateKey(requestingActorEncryptedPrivateKey!)
+    console.log('privateKey', privateKey)
 
     headers = signRequest(
       new URL(baseUrl, path),
       'GET',
       headers,
-      'privateKey', // todo: create private key
-      requestingActorUrl as URL
+      privateKey,
+      requestingActorUrl!
     );
   }
 
