@@ -60,7 +60,7 @@ export const CreatePost = () => {
     try {
       const newPost = await createPost({
         content: text,
-        actor: "KGO",
+        actor: "Test user",
         // actor: currentUser.username,
         media: media,
       });
