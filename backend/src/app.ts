@@ -11,8 +11,8 @@ import { connectToDatabase } from './config/database';
 import inboxRouter from './routes/inbox';
 import fedelikeRouter from './routes/federatedLikes';
 import localLikeRouter from './routes/localLikes';
-import { User } from "../../shared/types/user";
-
+import userRouter from './routes/user';
+import {User} from "../../shared/types/user";
 import mediaRoutes from './routes/mediaRoutes';
 import {Community} from "../../shared/types/community";
 
@@ -24,15 +24,22 @@ const PORT = process.env.PORT || 3000;
 
 connectToDatabase();
 
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:4000'];
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-}));
-app.use(cors({
+app.use((req, res, next) => {
+  const origin = req.header('Origin');
+  if (origin === 'http://localhost:4000') {
+    cors({
   origin: 'http://localhost:4000',
   credentials: false,
-}));
+    })(req, res, next);
+  } else {
+    cors({
+      origin: allowedOrigins,
+      credentials: true,
+    })(req, res, next);
+  }
+});
 
 app.use(express.json());
 
@@ -56,6 +63,7 @@ app.use('/api/posts', postRouter);
 app.use('/inbox', inboxRouter);
 app.use('/api/likes', fedelikeRouter);
 app.use('/api/likes', localLikeRouter);
+app.use('/api/users', userRouter);
 
 // just for testing
 app.get("/users/:username", (req, res) => {

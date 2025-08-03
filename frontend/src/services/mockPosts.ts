@@ -11,7 +11,7 @@ import post3Img from "../assets/post3.jpg";
 export const mockUsers: User[] = [
   {
     id: "u1",
-    username: "john_doe",
+    username: "Happy",
     name: "John Doe",
     profilePic: user1Pic,
     bio: "Fullstack Dev & Coffee Addict",
@@ -81,7 +81,7 @@ export const mockPosts: Post[] = [
   {
     id: "p1",
     text: "Loving the new React 19 features!",
-    images: [post1Img],
+    media: [{"url": post1Img, "type": "image"}],
     createdAt: new Date(Date.now() - 1000 * 10).toISOString(), // 10s ago
     user: mockUsers[0],
     comments: mockComments,
@@ -89,28 +89,28 @@ export const mockPosts: Post[] = [
   {
     id: "p2",
     text: "Designing this landing page was so satisfying 🎨 #UIUX",
-    images: [post2Img, post3Img],
+    media: [{"url": post2Img, "type": "image"}, {"url": post3Img, "type": "image"}],
     createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15m ago
     user: mockUsers[1],
   },
   {
     id: "p3",
     text: "Spotted a rare bird on my hike #NatureLover",
-    images: [],
+    media: [],
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5h ago
     user: mockUsers[2],
   },
   {
     id: "p4",
     text: "Day 42 of #100DaysOfCode — built a weather app today!",
-    images: [],
+    media: [],
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2d ago
     user: mockUsers[0],
   },
   {
     id: "p5",
     text: "Flashback to last summer ",
-    images: [post2Img],
+    media: [{"url": post2Img, "type": "image"}],
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365 * 2).toISOString(), // 2y ago
     user: mockUsers[1],
   },

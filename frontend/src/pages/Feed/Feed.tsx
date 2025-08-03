@@ -2,50 +2,46 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./Feed.css";
 import type { Post } from "../../types/Post";
-import { fetcher } from "../../utils/fetcher";
 import { formatRelativeTime } from "../../utils/timeUtils";
 import genericProfilePic from "../../assets/generic-profile-p.jpg";
-import { mockPosts } from "../../services/mockPosts";
+import { getAllPosts } from "../../services/postService";
 import { useAuth } from "../../auth/useAuth";
 import { v4 as uuidv4 } from "uuid";
 
 type FeedProps = {
   username?: string;
+  reloadKey?: number;
 };
 
-export const Feed = ({ username }: FeedProps) => {
+export const Feed = ({ username, reloadKey }: FeedProps) => {
   const { user: currentUser } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
 
-
-  // useEffect(() => {
-  //   let url = "/posts";
-  //   if (username) url += `?username=${username}`;
-
-  //   fetcher(url)
-  //     .then((data: Post[]) => {
-  //       setPosts(data);
-  //       setLoading(false);
-  //     })
-  //     .catch((err) => {
-  //       console.error("Failed to fetch posts", err);
-  //       setLoading(false);
-  //     });
-  // }, [username]);
-
-  // mock feed data
   useEffect(() => {
-    const filteredPosts = username
-      ? mockPosts.filter((post) => post.user?.username === username)
-      : mockPosts;
-    setPosts(filteredPosts);
-    setLoading(false);
-  }, [username]);
+    setLoading(true);
+    setError(false);
+
+    getAllPosts()
+      .then((fetchedPosts) => {
+        const filteredPosts = username
+          ? fetchedPosts.filter((post) => post.user?.username === username)
+          : fetchedPosts;
+        setPosts(filteredPosts);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch posts", err);
+        setLoading(false);
+        setError(true);
+      });
+  }, [username, reloadKey]);
+
 
   useEffect(() => {
     if (showComments) {
@@ -85,7 +81,6 @@ export const Feed = ({ username }: FeedProps) => {
     );
   };
 
-
   const openComments = (post: Post) => {
     setSelectedPost(post);
     setShowComments(true);
@@ -95,7 +90,7 @@ export const Feed = ({ username }: FeedProps) => {
     if (!commentText.trim() || !selectedPost) return;
 
     const newComment = {
-      id: uuidv4,
+      id: uuidv4(),
       user: currentUser?.username || "anonymous",
       text: commentText.trim(),
     };
@@ -119,13 +114,12 @@ export const Feed = ({ username }: FeedProps) => {
     setShowComments(false);
   };
 
-
-
   if (loading) return <div>Loading posts...</div>;
 
   return (
     <div className="feed-container">
-      {posts.length === 0 && <div className="feed-empty">No posts yet.</div>}
+      {posts.length === 0 && !error && <div className="feed-empty">No posts yet.</div>}
+      {posts.length === 0 && error && <div className="feed-failed">Failed to fetch posts.</div>}
       {posts.map((post) => (
         <div className="post-card" key={post.id}>
           <div className="post-header">
@@ -159,18 +153,23 @@ export const Feed = ({ username }: FeedProps) => {
 
           {post.text && <div className="feed-post-text">{post.text}</div>}
 
-          {post.images && post.images.length > 0 && (
-            <div className="feed-post-images">
-              {post.images.map((img, i) => (
-                <img
-                  key={i}
-                  className="feed-post-image"
-                  src={img}
-                  alt={img}
-                />
-              ))}
+          {post.media && post.media?.length > 0 && (
+            <div className="feed-post-media">
+
+              {post.media.map((media, index) =>
+                media.type === "video" ? (
+                  <video key={index} className="feed-post-video" controls>
+                    <source src={media.url} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <img key={index} className="feed-post-image" src={media.url} alt={`media-${index}`} />
+                )
+              )}
+
             </div>
           )}
+
           <div className="post-actions">
             <button onClick={() => handleLike(post.id)} className="icon-button">
               {post.liked ? "❤️" : "🤍"} {post.likes || 0}

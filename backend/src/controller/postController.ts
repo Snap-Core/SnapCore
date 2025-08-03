@@ -18,7 +18,7 @@ const generateActivityPubNote = (
     published: new Date().toISOString(),
     to: ["https://www.w3.org/ns/activitystreams#Public"],
     object: {
-      id: id + "#note",
+      id: id,
       type: "Note",
       content,
       attributedTo: actor,
