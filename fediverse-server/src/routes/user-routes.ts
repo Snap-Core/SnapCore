@@ -1,9 +1,9 @@
 import express from 'express';
-import {getExternalUserPageFromUsername, getPersonFromUsername} from '../controllers/user-controller';
+import {getExternalPersonFromUsername, getPersonFromUsername} from '../controllers/user-controller';
 
 const router = express.Router();
 
-router.get('/external', getExternalUserPageFromUsername);
+router.get('/external', getExternalPersonFromUsername);
 router.get('/:username', getPersonFromUsername);
 
 export default router

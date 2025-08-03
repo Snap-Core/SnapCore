@@ -1,9 +1,13 @@
 import { User } from "../../../shared/types/user";
 import { Person } from "../types/person";
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const fediverseServerUrl = new URL(process.env.FEDIVERSE_SERVER_URL as string);
 
 export function getPersonFromUser(user: User): Person {
-  const baseUrl = `http://localhost:4000`; // todo: find better way to retrieve base url
-  const actorId = `${baseUrl}/users/${user.username}`;
+  const actorId = `${fediverseServerUrl}users/${user.username}`;
 
   return {
     "@context": [

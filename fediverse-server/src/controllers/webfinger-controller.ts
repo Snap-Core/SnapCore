@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
 import {User} from "../../../shared/types/user";
 import {getBackendServer} from "../utils/backend-service";
+import dotenv from 'dotenv';
 
-const fediverseServerUrl = 'http://localhost:4000'; // todo: better way of getting internal server
-const fediverseDomain = new URL(fediverseServerUrl).hostname;
+dotenv.config();
+
+const fediverseServerUrl = new URL(process.env.FEDIVERSE_SERVER_URL as string);
+const fediverseDomain = fediverseServerUrl.hostname;
 
 export const handleWebFinger = async (req: Request, res: Response) => {
   const resource = req.query.resource as string;
@@ -34,7 +37,7 @@ export const handleWebFinger = async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const actorUrl = `${fediverseServerUrl}/users/${user.username}`;
+  const actorUrl = `${fediverseServerUrl}users/${user.username}`;
 
   res.setHeader('Content-Type', 'application/jrd+json');
   res.json({
