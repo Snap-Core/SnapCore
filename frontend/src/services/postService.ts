@@ -64,3 +64,56 @@ export const getPostsByActor = async (actorUrl: string) => {
   }
   return await res.json();
 };
+
+export const createPost = async (params: {
+  content: string;
+  actor: string;
+  media?: File[];
+}): Promise<Post> => {
+  const formData = new FormData();
+  formData.append("content", params.content);
+  formData.append("actor", params.actor);
+  if (params.media) {
+    for (const file of params.media) {
+      formData.append("media", file);
+    }
+  }
+
+  const response = await fetcher(`/posts`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const raw: RawPost = await response;
+
+  const newPost: Post = {
+    id: raw._id,
+    text: raw.content,
+    media: Array.isArray(raw.media)
+      ? raw.media.map((item: any) => ({
+          url: `${BASE_MEDIA_URL}${item.url.trim()}`,
+          type: item.type,
+        }))
+      : raw.mediaUrl
+      ? [
+          {
+            url: `${BASE_MEDIA_URL}${raw.mediaUrl.trim()}`,
+            type: raw.mediaType || "image",
+          },
+        ]
+      : [],
+    createdAt: raw.createdAt,
+    liked: false,
+    likes: 0,
+    comments: [],
+    user: {
+      username:
+        typeof raw.actor === "string" ? raw.actor.split("/").pop()! : "unknown",
+      name:
+        typeof raw.actor === "string" ? raw.actor.split("/").pop()! : "Unknown",
+      profilePic: undefined,
+    },
+  };
+
+  return newPost;
+};
