@@ -3,7 +3,12 @@ import { getPersonFromUser } from '../utils/convert-activity-pub-objects';
 import {User} from "../../../shared/types/user";
 import {getBackendServer} from "../utils/backend-service";
 import {getExternalServer, getExternalServerUrl} from "../utils/external-federated-service";
-import {WebfingerResponse, WebfingerResponseLink} from "../types/webfinger-response";
+import {WebfingerResponse} from "../types/webfinger-response";
+import { Person } from '../types/person';
+import dotenv from 'dotenv';
+
+dotenv.config();
+const frontendServerUrl = new URL(process.env.FRONTEND_SERVER_URL as string);
 
 export const getPersonFromUsername = async (req: Request, res: Response) => {
   const username = req.params.username;
@@ -16,7 +21,7 @@ export const getPersonFromUsername = async (req: Request, res: Response) => {
   const response = await getBackendServer(`users/${username}`);
 
   if (!response.ok) {
-    return res.status(500).json({ error: 'Could not retrieve actor internally' });
+    return res.status(500).json({ error: 'Could not retrieve user from internal server' });
   }
 
   const user : User = await response.json();
@@ -24,13 +29,19 @@ export const getPersonFromUsername = async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'User not found' });
   }
 
-  const actor = getPersonFromUser(user);
 
-  res.setHeader('Content-Type', 'application/activity+json');
-  res.status(200).json(actor);
+  const acceptHeader = req.headers.accept || '';
+
+  if (acceptHeader.includes('application/activity+json')) {
+    const actor = getPersonFromUser(user);
+    res.setHeader('Content-Type', 'application/activity+json');
+    return res.status(200).json(actor);
+  }
+
+  return res.redirect(`${frontendServerUrl}profile/${username}`); // todo: confirm structure of url
 };
 
-export const getExternalUserPageFromUsername = async (req: Request, res: Response) => {
+export const getExternalPersonFromUsername = async (req: Request, res: Response) => {
   const { username, domain } = req.query as { username: string; domain: string };
 
   if (!username || !domain) {
@@ -55,6 +66,18 @@ export const getExternalUserPageFromUsername = async (req: Request, res: Respons
     return res.status(500).json({ error: 'Could not retrieve person url' });
   }
 
+  const personResponse = await getExternalServerUrl(personUrl, { Accept: 'application/activity+json' });
+
+  if (!personResponse.ok) {
+    return res.status(500).json({ error: 'Could not retrieve person object information' });
+  }
+
+  const person : Person = await personResponse.json();
+
+  if (!person) {
+    return res.status(500).json({ error: 'Could not deserialize person response' });
+  }
+
   res.setHeader('Content-Type', 'application/activity+json');
-  res.status(200).json(personUrl);
+  res.status(200).json(person);
 };

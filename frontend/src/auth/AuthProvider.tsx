@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    fetcher('/auth/me')
+    fetcher('/users/me')
       .then((data) => setUser(data?.user || null))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      await fetcher('/auth/logout', { method: 'POST' });
+      await fetcher('/users/logout', { method: 'POST' });
     } catch (err) {
       console.error('Logout failed', err);
     } finally {

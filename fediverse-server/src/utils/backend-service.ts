@@ -1,5 +1,9 @@
-const internalServerUrl = 'http://localhost:3000'; // todo: better way of getting internal server
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const backendServerUrl = new URL(process.env.BACKEND_SERVER_URL as string);
 
 export const getBackendServer = async (path: string) => {
-  return await fetch(`${internalServerUrl}/${path}`);
+  return await fetch(`${backendServerUrl}${path}`);
 }
