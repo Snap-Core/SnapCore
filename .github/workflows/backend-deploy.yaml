@@ -84,6 +84,11 @@ jobs:
             TOKEN_ENDPOINT=https://oauth2.googleapis.com/token
             TOKEN_INFO=https://oauth2.googleapis.com/tokeninfo
             AUTH_ENDPOINT=https://accounts.google.com/o/oauth2/v2/auth
+            USE_S3=true
+            AWS_REGION=af-south-1
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
             EOF
 
             # Install app dependencies
