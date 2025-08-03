@@ -1,6 +1,8 @@
 import { User } from "../../../shared/types/user";
 import { Person } from "../types/person";
 import dotenv from 'dotenv';
+import {Community} from "../../../shared/types/community";
+import {Group} from "../types/group";
 
 dotenv.config();
 
@@ -32,8 +34,40 @@ export function getPersonFromUser(user: User): Person {
     publicKey: {
       id: `${actorId}#main-key`,
       owner: actorId,
-      publicKeyPem: user.publicKey
+      publicKeyPem:  "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...\n-----END PUBLIC KEY-----" // todo: find way to generate programmatically
     }
+  };
+}
+
+export function getGroupFromCommunity(community: Community): Group {
+  const actorId = `${fediverseServerUrl}groups/${community.handle}`;
+
+  return {
+    "@context": [
+      "https://www.w3.org/ns/activitystreams",
+      "https://w3id.org/security/v1"
+    ],
+    id: actorId,
+    type: "Group",
+    preferredUsername: community.handle,
+    name: community.displayName,
+    summary: community.summary || '',
+    inbox: `${actorId}/inbox`,
+    outbox: `${actorId}/outbox`,
+    followers: `${actorId}/followers`,
+    following: `${actorId}/following`,
+    icon: {
+      type: "Image",
+      mediaType: "image/jpeg",
+      url: community.communityPicUrl
+    },
+    publicKey: {
+      id: `${actorId}#main-key`,
+      owner: actorId,
+      publicKeyPem:  "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...\n-----END PUBLIC KEY-----" // todo: find way to generate programmatically
+    },
+    published: community.created,
+    updated: community.updated,
   };
 }
 
@@ -42,7 +76,6 @@ export function getUserFromPerson(person: Person): User {
     username: person.preferredUsername || '',
     displayName: person.name || '',
     summary: person.summary || '',
-    publicKey: person.publicKey?.publicKeyPem || '',
     profilePicUrl: person.icon?.url || ''
   };
 }

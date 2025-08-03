@@ -3,7 +3,7 @@ import { getPersonFromUser } from '../utils/convert-activity-pub-objects';
 import {User} from "../../../shared/types/user";
 import {getBackendServer} from "../utils/backend-service";
 import {getExternalServer, getExternalServerUrl} from "../utils/external-federated-service";
-import {WebfingerResponse, WebfingerResponseLink} from "../types/webfinger-response";
+import {WebfingerResponse} from "../types/webfinger-response";
 import { Person } from '../types/person';
 import dotenv from 'dotenv';
 

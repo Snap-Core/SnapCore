@@ -9,6 +9,8 @@ const fediverseServerUrl = new URL(process.env.FEDIVERSE_SERVER_URL as string);
 const fediverseDomain = fediverseServerUrl.hostname;
 
 export const handleWebFinger = async (req: Request, res: Response) => {
+  // todo: add discovery for groups
+
   const resource = req.query.resource as string;
 
   if (!resource || !resource.startsWith('acct:')) {
