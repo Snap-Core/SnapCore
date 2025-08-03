@@ -6,17 +6,19 @@ import { Feed } from "../Feed/Feed";
 import genericProfilePic from '../../assets/generic-profile-p.jpg';
 // import { fetcher } from "../../utils/fetcher";
 import { mockUsers } from "../../services/mockPosts";
+import { useAuth } from "../../auth/useAuth";
 
-const currentUser = {
-    username: "john_doe", // Simulate logged-in user
-};
+// const currentUser = {
+//     username: "john_doe", // Simulate logged-in user
+// };
 
 export const UserProfile = () => {
     const { username } = useParams<{ username: string }>();
-    const [user, setUser] = useState<User | null>(null);
+    const [userProfile, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [isFollowing, setIsFollowing] = useState(false);
     const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
+    const { user: currentUser } = useAuth();
 
     // useEffect(() => {
     //     if (!username) return;
@@ -80,18 +82,18 @@ export const UserProfile = () => {
         return <div className="user-profile-container">Loading user profile...</div>;
     }
 
-    if (!user) {
+    if (!userProfile) {
         return <div className="user-profile-container">User not found</div>;
     }
 
-    const isOwnProfile = currentUser?.username === user.username;
+    const isOwnProfile = currentUser?.username === userProfile?.username;
 
     return (
         <div className="user-profile-container">
             <div className="user-header">
                 <div className="profile-pic-wrapper">
                     <img
-                        src={newProfilePic || user.profilePic || genericProfilePic}
+                        src={newProfilePic || userProfile?.profilePic || genericProfilePic}
                         alt="Profile"
                         className="profile-pic"
                     />
@@ -106,12 +108,12 @@ export const UserProfile = () => {
                     )}
                 </div>
                 <div className="user-info">
-                    <h2>{user.name}</h2>
-                    <p className="username">@{user.username}</p>
-                    <p className="bio">{user.bio}</p>
+                    <h2>{userProfile?.name}</h2>
+                    <p className="username">@{userProfile?.username}</p>
+                    <p className="bio">{userProfile?.bio}</p>
                     <div className="follow-info">
-                        <span><strong>{user.followers}</strong> Followers</span>
-                        <span><strong>{user.following}</strong> Following</span>
+                        <span><strong>{userProfile?.followers}</strong> Followers</span>
+                        <span><strong>{userProfile?.following}</strong> Following</span>
                     </div>
                     {!isOwnProfile && (
                         <button className="follow-button" onClick={handleFollowToggle}>
@@ -123,9 +125,11 @@ export const UserProfile = () => {
 
             <div className="user-posts">
                 <h3>Posts</h3>
-                <Feed username={user.username} />
+                <Feed username={userProfile?.username} />
             </div>
         </div>
     );
+
+
 };
 
