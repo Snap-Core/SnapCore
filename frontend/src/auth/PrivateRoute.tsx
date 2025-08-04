@@ -7,11 +7,15 @@ export const PrivateRoute = ({ children }: { children: React.JSX.Element }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <Loading/>
+    return <Loading />;
   }
 
   if (!user) {
     return <Navigate to='/' replace />;
+  }
+
+  if (user && user.activated === false) {
+    return <Navigate to='/profile' replace />;
   }
 
   return children;
