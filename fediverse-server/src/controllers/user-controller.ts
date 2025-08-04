@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { getPersonFromUser } from '../utils/convert-activity-pub-objects';
 import {User} from "../../../shared/types/user";
-import {getBackendServer} from "../utils/backend-service";
-import {getExternalServer, getExternalServerUrl} from "../utils/external-federated-service";
+import {requestBackendServer} from "../utils/backend-service";
+import {getExternalServer} from "../utils/external-federated-service";
 import {WebfingerResponse} from "../types/webfinger-response";
 import { Person } from '../types/person';
 import dotenv from 'dotenv';
@@ -18,17 +18,23 @@ export const getPersonFromUsername = async (req: Request, res: Response) => {
       .json({ error: 'Invalid get user request' });
   }
 
-  const response = await getBackendServer(`users/${username}`);
-
-  if (!response.ok) {
-    return res.status(500).json({ error: 'Could not retrieve user from internal server' });
+  let user : User;
+  try {
+    user = await requestBackendServer(
+      `users/${username}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/activity+json',
+        },
+      });
+  } catch (error) {
+    return res.status(500).json('Could not retrieve user from backend server')
   }
 
-  const user : User = await response.json();
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
-
 
   const acceptHeader = req.headers.accept || '';
 
@@ -48,7 +54,7 @@ export const getExternalPersonFromUsername = async (req: Request, res: Response)
     return res.status(400).json({ error: 'Invalid get user request' });
   }
 
-  const webfingerResponse = await getExternalServer(domain, `.well-known/webfinger?resource=acct:${username}@${domain}`);
+  const webfingerResponse = await getExternalServer(new URL(`https://${domain}`), `.well-known/webfinger?resource=acct:${username}@${domain}`);
 
   if (!webfingerResponse.ok) {
     return res.status(500).json({ error: 'Could not retrieve external actor' });
@@ -66,7 +72,7 @@ export const getExternalPersonFromUsername = async (req: Request, res: Response)
     return res.status(500).json({ error: 'Could not retrieve person url' });
   }
 
-  const personResponse = await getExternalServerUrl(personUrl, { Accept: 'application/activity+json' });
+  const personResponse = await getExternalServer(new URL(personUrl), '');
 
   if (!personResponse.ok) {
     return res.status(500).json({ error: 'Could not retrieve person object information' });

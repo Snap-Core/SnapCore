@@ -1,0 +1,108 @@
+.user-info-input-form {
+  width: 100%;
+  max-width: clamp(320px, 80vw, 420px);
+  margin: 48px auto;
+  padding: clamp(12px, 4vw, 48px);
+  border-radius: 1.2rem;
+  box-shadow: 8px 8px 32px 0 rgba(0, 0, 0, 0.1);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.user-info-input-form fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.user-info-input-form legend {
+  color: #111;
+  margin-bottom: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-size: 1.2rem;
+}
+
+.user-info-input-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.user-info-input-form label {
+  color: #222;
+  font-weight: 500;
+  margin-bottom: 0.1rem;
+}
+
+.user-info-input-form input,
+.user-info-input-form textarea {
+  margin: 0;
+  padding: 0.8rem;
+  font-size: 1.1rem;
+  border-radius: 0.7rem;
+  border: 1px solid #e5e5e5;
+  background: #fafafa;
+  color: #111;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.user-info-input-form input:focus,
+.user-info-input-form textarea:focus {
+  border-color: #b9f5cc;
+}
+
+.user-info-input-form textarea {
+  resize: vertical;
+  min-height: 90px;
+  margin-bottom: 0.5rem;
+}
+
+.user-info-input-form .actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.user-info-input-form button {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 0.7rem;
+  padding: 0.8rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: 1px solid #b9f5cc;
+  min-width: 80px;
+}
+
+.user-info-input-form button[type="button"] {
+  background: #888;
+}
+
+.user-info-input-form button:disabled {
+  background: #bdbdbd;
+  cursor: not-allowed;
+}
+
+.user-info-input-form .error {
+  color: #ef4444;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .user-info-input-form {
+    padding: 0.5rem;
+  }
+}
