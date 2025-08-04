@@ -1,70 +1,62 @@
 import { User } from "../../../shared/types/user";
 import { Person } from "../types/person";
-import dotenv from 'dotenv';
 import {Community} from "../../../shared/types/community";
 import {Group} from "../types/group";
 
-dotenv.config();
-
-const fediverseServerUrl = new URL(process.env.FEDIVERSE_SERVER_URL as string);
-
 export function getPersonFromUser(user: User): Person {
-  const actorId = `${fediverseServerUrl}users/${user.username}`;
-
   return {
     "@context": [
       "https://www.w3.org/ns/activitystreams",
       "https://w3id.org/security/v1"
     ],
-    id: actorId,
+    id: user.id,
     type: "Person",
     preferredUsername: user.username,
     name: user.displayName,
     summary: user.summary || '',
-    inbox: `${actorId}/inbox`,
-    outbox: `${actorId}/outbox`,
-    followers: `${actorId}/followers`,
-    following: `${actorId}/following`,
-    liked: `${actorId}/liked`,
+    inbox: `${user.id}/inbox`,
+    outbox: `${user.id}/outbox`,
+    followers: `${user.id}/followers`,
+    following: `${user.id}/following`,
+    liked: `${user.id}/liked`,
     icon: {
       type: "Image",
       mediaType: "image/jpeg",
       url: user.profilePicUrl
     },
     publicKey: {
-      id: `${actorId}#main-key`,
-      owner: actorId,
-      publicKeyPem:  "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...\n-----END PUBLIC KEY-----" // todo: find way to generate programmatically
+      id: `${user.id}#main-key`,
+      owner: user.id,
+      publicKeyPem: user.publicKey
     }
   };
 }
 
 export function getGroupFromCommunity(community: Community): Group {
-  const actorId = `${fediverseServerUrl}groups/${community.handle}`;
 
   return {
     "@context": [
       "https://www.w3.org/ns/activitystreams",
       "https://w3id.org/security/v1"
     ],
-    id: actorId,
+    id: community.id,
     type: "Group",
     preferredUsername: community.handle,
     name: community.displayName,
     summary: community.summary || '',
-    inbox: `${actorId}/inbox`,
-    outbox: `${actorId}/outbox`,
-    followers: `${actorId}/followers`,
-    following: `${actorId}/following`,
+    inbox: `${community.id}/inbox`,
+    outbox: `${community.id}/outbox`,
+    followers: `${community.id}/followers`,
+    following: `${community.id}/following`,
     icon: {
       type: "Image",
       mediaType: "image/jpeg",
       url: community.communityPicUrl
     },
     publicKey: {
-      id: `${actorId}#main-key`,
-      owner: actorId,
-      publicKeyPem:  "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A...\n-----END PUBLIC KEY-----" // todo: find way to generate programmatically
+      id: `${community.id}#main-key`,
+      owner: community.id,
+      publicKeyPem:  community.handle,
     },
     published: community.created,
     updated: community.updated,
@@ -73,9 +65,11 @@ export function getGroupFromCommunity(community: Community): Group {
 
 export function getUserFromPerson(person: Person): User {
   return {
+    id: person.id,
     username: person.preferredUsername || '',
     displayName: person.name || '',
     summary: person.summary || '',
-    profilePicUrl: person.icon?.url || ''
+    profilePicUrl: person.icon?.url || '',
+    publicKey: person.publicKey.publicKeyPem
   };
 }
