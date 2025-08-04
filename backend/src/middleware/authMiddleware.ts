@@ -18,7 +18,6 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     user.googleId.length > 0 &&
     user.email.length > 0
   ) {
-    req.actor = `http://localhost:5173/users/${user.googleId}`; // Still need to adjust the URL as needed
     req.user = user;
     return next();
   }

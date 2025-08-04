@@ -1,11 +1,15 @@
 import { Request, Response, NextFunction } from "express";
-import { updateUser } from "../services/dynamoUserService";
+import { findUserById, updateUser, scanUsers, findUserByUsername } from "../services/dynamoUserService";
 
-export const getCurrentUser = (req: Request, res: Response) => {
-  if (!req.actor) {
-    return res.status(401).json({ error: "Unauthorized" });
+export const getCurrentUser = async (req: Request, res: Response) => {
+  if (!req.user?.googleId) {
+    return res.status(404).json({ error: "User is a required field" });
   }
-  res.json({ actor: req.actor, user: req.user });
+  const user = await findUserById(req.user.googleId);
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+  res.json({ user });
 };
 
 export const logout = (req: Request, res: Response) => {
@@ -20,7 +24,7 @@ export const updateUserController = async (req: Request, res: Response, next: Ne
     const id = req.user?.googleId;
     const updates = req.body;
 
-    if (!id || (!updates.name && !updates.email)) {
+    if (!id || (!updates.name && !updates.email && !updates.displayName && !updates.username && !updates.summary && typeof updates.activated !== "boolean")) {
       return res.status(400).json({ error: "Missing user id or update fields." });
     }
 
@@ -34,3 +38,26 @@ export const updateUserController = async (req: Request, res: Response, next: Ne
     next(err);
   }
 };
+
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await scanUsers();
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+};
+
+export const getUserByUsername = async (req: Request, res: Response) => {
+  const username = req.params.username;
+  if (!username) {
+    return res.status(400).json({ error: "Username is required" });
+  }
+  const user = await findUserByUsername(username);
+  if (!user) {
+    return res.status(404).json({ error: "User not foundd" });
+  }
+  const { id, email, ...rest } = user;
+  res.json({ user: rest });
+};
+
