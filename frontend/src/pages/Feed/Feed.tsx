@@ -7,6 +7,7 @@ import genericProfilePic from "../../assets/generic-profile-p.jpg";
 import { getAllPosts } from "../../services/postService";
 import { useAuth } from "../../auth/useAuth";
 import { v4 as uuidv4 } from "uuid";
+import { likePost, unlikePost } from "../../services/likeService";
 
 type FeedProps = {
   username?: string;
@@ -27,7 +28,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
     setLoading(true);
     setError(false);
 
-    getAllPosts()
+    getAllPosts(currentUser?.username || "")
       .then((fetchedPosts) => {
         const filteredPosts = username
           ? fetchedPosts.filter((post) => post.user?.username === username)
@@ -40,7 +41,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
         setLoading(false);
         setError(true);
       });
-  }, [username, reloadKey]);
+  }, [currentUser?.username, reloadKey]);
 
 
   useEffect(() => {
@@ -67,18 +68,60 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
     });
   };
 
-  const handleLike = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? {
-            ...post,
-            likes: post.liked ? (post.likes ?? 0) - 1 : (post.likes ?? 0) + 1,
-            liked: !post.liked,
-          }
-          : post
-      )
-    );
+  const handleLike = async (postId: string) => {
+    const actorUrl =
+      currentUser?.username
+        ? `https://mastinstatok.local/users/${currentUser.username}`
+        : import.meta.env.MODE === "development"
+          ? "https://mastinstatok.local/users/test-actor"
+          : null;
+
+    if (!actorUrl) {
+      console.warn("Like toggle aborted: missing actor URL");
+      return;
+    }
+
+    const post = posts.find((p) => p.id === postId);
+    const objectUrl = post?.activityPubObject?.id;
+
+    if (!post || !objectUrl) {
+      console.error("Like toggle failed: missing post or activityPubObject.id");
+      return;
+    }
+
+    const alreadyLiked = post.likes?.some((like) => like.actor === actorUrl);
+
+    try {
+      if (alreadyLiked) {
+        await unlikePost({ actor: actorUrl, object: objectUrl });
+      } else {
+        await likePost({ actor: actorUrl, object: objectUrl });
+      }
+
+      setPosts((prevPosts) =>
+        prevPosts.map((p) =>
+          p.id !== postId
+            ? p
+            : {
+              ...p,
+              liked: !alreadyLiked,
+              likes: alreadyLiked
+                ? p.likes?.filter((like) => like.actor !== actorUrl) ?? []
+                : [
+                  ...(p.likes ?? []),
+                  {
+                    actor: actorUrl,
+                    object: objectUrl,
+                    activityPubObject: {},
+                    createdAt: new Date().toISOString(),
+                  },
+                ],
+            }
+        )
+      );
+    } catch (err) {
+      console.error("Like toggle error:", err);
+    }
   };
 
   const openComments = (post: Post) => {
@@ -172,7 +215,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
 
           <div className="post-actions">
             <button onClick={() => handleLike(post.id)} className="icon-button">
-              {post.liked ? "❤️" : "🤍"} {post.likes || 0}
+              {post.liked ? "❤️" : "🤍"} {post.likes?.length || 0}
             </button>
             <button onClick={() => openComments(post)} className="icon-button">
               💬 {post.comments?.length || 0}

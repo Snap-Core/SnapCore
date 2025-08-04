@@ -9,17 +9,28 @@ export type MediaItem = {
   type: "image" | "video";
 };
 
+export type Like = {
+  actor: string;
+  object?: string;
+  activityPubObject: object;
+  createdAt: string;
+};
+
 export type Post = {
   id: string;
   text?: string;
   media?: MediaItem[];
   createdAt: string;
-  likes?: number;
+  likes?: Like[];
   liked?: boolean;
   comments?: Comment[];
   user?: {
     username?: string;
     name?: string;
     profilePic?: string;
+  };
+  activityPubObject?: {
+    id: string;
+    [key: string]: any;
   };
 };
