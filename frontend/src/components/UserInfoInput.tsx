@@ -45,7 +45,7 @@ export const UserInfoInput = ({ userId, onClose, onSubmit }: UserInfoInputProps)
   async function checkUsername(username: string) {
     if (username.length < limits.username.min) return;
     try {
-      const res = await fetcher(`/users/by-username/${encodeURIComponent(username)}`, {
+      const res = await fetcher(`/users/${encodeURIComponent(username)}`, {
         method: "GET"
       });
       if (res?.user) {
