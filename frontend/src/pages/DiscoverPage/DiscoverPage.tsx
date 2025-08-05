@@ -193,7 +193,7 @@ export const DiscoverPage = () => {
                             className="discover-user-avatar"
                           />
                           <div className="discover-user-details">
-                            <h4 className="discover-user-name">{user.displayName || user.name}</h4>
+                            <h4 className="discover-user-name">{user.displayName || user.displayName}</h4>
                             <p className="discover-user-username">@{user.username}</p>
                             <p className="discover-user-bio">{user.summary}</p>
                             <div className="discover-user-stats">
@@ -225,11 +225,11 @@ export const DiscoverPage = () => {
                           <div className="discover-post-header">
                             <img
                               src={post.user?.profilePic || "/src/assets/generic-profile-p.jpg"}
-                              alt={post.user?.name}
+                              alt={post.user?.displayName}
                               className="discover-post-avatar"
                             />
                             <div>
-                              <h4 className="discover-post-author">{post.user?.name}</h4>
+                              <h4 className="discover-post-author">{post.user?.displayName}</h4>
                               <p className="discover-post-username">@{post.user?.username}</p>
                             </div>
                           </div>

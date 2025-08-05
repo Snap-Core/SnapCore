@@ -1,5 +1,6 @@
-import type { Post } from "../types/Post";
+import type { Like, Post } from "../types/Post";
 import { fetcher } from "../utils/fetcher";
+import { getLikesByPost } from "./likeService";
 
 const BASE_MEDIA_URL = "http://localhost:3000";
 
@@ -11,16 +12,39 @@ type RawPost = {
   media?: { url: string; type: string }[];
   mediaUrl?: string;
   mediaType?: string;
+  activityPubObject?: {
+    id: string;
+    [key: string]: any;
+  };
 };
 
-export const getAllPosts = async (): Promise<Post[]> => {
-  const data: RawPost[] = await fetcher(`/posts`);
+export const getAllPosts = async (
+  currentUserActor: string
+): Promise<Post[]> => {
+  const encodedActor = encodeURIComponent(currentUserActor);
 
-  return data.map((raw) => {
-    const formatted: Post = {
-      id: raw._id,
-      text: raw.content,
-      media: Array.isArray(raw.media)
+  const rawPosts: RawPost[] = await fetcher(`/posts?actor=${encodedActor}`);
+  // const rawPosts: RawPost[] = await fetcher(`/posts`);
+
+  const posts = await Promise.all(
+    rawPosts.map(async (raw): Promise<Post | null> => {
+      const postUrl = raw.activityPubObject?.id;
+      if (!postUrl) {
+        console.warn("Skipping post with missing activityPubObject:", raw._id);
+
+        return null;
+      }
+
+      let likes: Like[] = [];
+      try {
+        likes = await getLikesByPost(postUrl);
+      } catch (error) {
+        console.error(`Failed to fetch likes for post ${postUrl}`, error);
+      }
+
+      const liked = likes.some((like) => like.actor.endsWith(currentUserActor));
+
+      const media = Array.isArray(raw.media)
         ? raw.media.map((item: any) => ({
             url: `${BASE_MEDIA_URL}${item.url.trim()}`,
             type: item.type,
@@ -32,33 +56,36 @@ export const getAllPosts = async (): Promise<Post[]> => {
               type: raw.mediaType || "image",
             },
           ]
-        : [],
-      createdAt: raw.createdAt,
-      liked: false,
-      likes: 0,
-      comments: [],
-      user: {
-        username:
-          typeof raw.actor === "string"
-            ? raw.actor.split("/").pop()
-            : "unknown",
-        name:
-          typeof raw.actor === "string"
-            ? raw.actor.split("/").pop()
-            : "Unknown",
-        profilePic: undefined,
-      },
-    };
+        : [];
 
-    return formatted;
-  });
+      const username =
+        typeof raw.actor === "string" ? raw.actor.split("/").pop() : "unknown";
+
+      return {
+        id: raw._id,
+        text: raw.content,
+        media,
+        createdAt: raw.createdAt,
+        liked,
+        likes,
+        comments: [],
+        user: {
+          username,
+          displayName: username,
+          profilePic: undefined,
+        },
+        activityPubObject: raw.activityPubObject!,
+      };
+    })
+  );
+
+  return posts.filter((post): post is Post => post !== null);
 };
 
-//Please utilise this code snippet to get posts by a specific actor URL thanks :)
 export const getPostsByActor = async (actorUrl: string) => {
   const encoded = encodeURIComponent(actorUrl);
 
-  const res = await fetch(`/api/posts/actor/${encoded}`);
+  const res = await fetch(`/posts/actor/${encoded}`);
   if (!res.ok) {
     throw new Error(`Failed to fetch posts for actor: ${actorUrl}`);
   }
@@ -104,12 +131,12 @@ export const createPost = async (params: {
       : [],
     createdAt: raw.createdAt,
     liked: false,
-    likes: 0,
+    likes: [],
     comments: [],
     user: {
       username:
         typeof raw.actor === "string" ? raw.actor.split("/").pop()! : "unknown",
-      name:
+      displayName:
         typeof raw.actor === "string" ? raw.actor.split("/").pop()! : "Unknown",
       profilePic: undefined,
     },
