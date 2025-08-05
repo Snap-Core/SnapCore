@@ -1,7 +1,9 @@
+const BASE_URL = "http://localhost:3000";
+
 //Please utilise this code snippet to get likes by a specific post URL thanks :)
 export async function getLikesByPost(postUrl: string) {
   const encodedUrl = encodeURIComponent(postUrl);
-  const res = await fetch(`http://localhost:3000/api/likes/${encodedUrl}`);
+  const res = await fetch(`${BASE_URL}/api/likes/${encodedUrl}`);
 
   if (!res.ok) {
     throw new Error("Failed to fetch likes");
@@ -12,7 +14,7 @@ export async function getLikesByPost(postUrl: string) {
 
 export const likePost = async (params: { actor: string; object: string }) => {
   try {
-    const response = await fetch("http://localhost:3000/api/likes", {
+    const response = await fetch(`${BASE_URL}/api/likes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -34,7 +36,7 @@ export const likePost = async (params: { actor: string; object: string }) => {
 
 export const unlikePost = async (params: { actor: string; object: string }) => {
   try {
-    const response = await fetch("http://localhost:3000/api/likes", {
+    const response = await fetch(`${BASE_URL}/api/likes`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),

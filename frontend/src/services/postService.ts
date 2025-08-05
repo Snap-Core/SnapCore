@@ -21,18 +21,17 @@ type RawPost = {
 export const getAllPosts = async (
   currentUserActor: string
 ): Promise<Post[]> => {
-  // const encodedActor = encodeURIComponent(currentUserActor);
-  // console.log("currentUserActor: ", currentUserActor);
-  // console.log("encodedActor: ", encodedActor);
+  const encodedActor = encodeURIComponent(currentUserActor);
 
-  // const rawPosts: RawPost[] = await fetcher(`/posts?actor=${encodedActor}`);
-  const rawPosts: RawPost[] = await fetcher(`/posts`);
+  const rawPosts: RawPost[] = await fetcher(`/posts?actor=${encodedActor}`);
+  // const rawPosts: RawPost[] = await fetcher(`/posts`);
 
   const posts = await Promise.all(
     rawPosts.map(async (raw): Promise<Post | null> => {
       const postUrl = raw.activityPubObject?.id;
       if (!postUrl) {
         console.warn("Skipping post with missing activityPubObject:", raw._id);
+
         return null;
       }
 
@@ -72,7 +71,7 @@ export const getAllPosts = async (
         comments: [],
         user: {
           username,
-          name: username,
+          displayName: username,
           profilePic: undefined,
         },
         activityPubObject: raw.activityPubObject!,
@@ -83,11 +82,10 @@ export const getAllPosts = async (
   return posts.filter((post): post is Post => post !== null);
 };
 
-//Please utilise this code snippet to get posts by a specific actor URL thanks :)
 export const getPostsByActor = async (actorUrl: string) => {
   const encoded = encodeURIComponent(actorUrl);
 
-  const res = await fetch(`/api/posts/actor/${encoded}`);
+  const res = await fetch(`/posts/actor/${encoded}`);
   if (!res.ok) {
     throw new Error(`Failed to fetch posts for actor: ${actorUrl}`);
   }
@@ -138,7 +136,7 @@ export const createPost = async (params: {
     user: {
       username:
         typeof raw.actor === "string" ? raw.actor.split("/").pop()! : "unknown",
-      name:
+      displayName:
         typeof raw.actor === "string" ? raw.actor.split("/").pop()! : "Unknown",
       profilePic: undefined,
     },

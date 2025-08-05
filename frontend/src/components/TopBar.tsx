@@ -19,7 +19,7 @@ export const TopBar = () => {
             <Link to={`/profile`}>
               <img
                 src={user.profilePic || genericProfilePic}
-                alt={user.name}
+                alt={user.displayName}
                 className="avatar"
               />
             </Link>

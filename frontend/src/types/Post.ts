@@ -26,7 +26,7 @@ export type Post = {
   comments?: Comment[];
   user?: {
     username?: string;
-    name?: string;
+    displayName?: string;
     profilePic?: string;
   };
   activityPubObject?: {

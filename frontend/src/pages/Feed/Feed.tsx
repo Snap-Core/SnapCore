@@ -8,6 +8,8 @@ import { getAllPosts } from "../../services/postService";
 import { useAuth } from "../../auth/useAuth";
 import { v4 as uuidv4 } from "uuid";
 import { likePost, unlikePost } from "../../services/likeService";
+import { useFollow } from "../../components/FollowContext";
+import { useToast } from "../../components/ToastContext";
 
 type FeedProps = {
   username?: string;
@@ -17,12 +19,19 @@ type FeedProps = {
 export const Feed = ({ username, reloadKey }: FeedProps) => {
   const { user: currentUser } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const { followedUsers, toggleFollow } = useFollow();
+  const isFollowing = (username: string) => followedUsers.has(username);
+  const { showToast } = useToast();
+  // const hasShownToast = useRef(false);
+
+  // const currentUser = {
+  //   username: "Happy", // Simulate logged-in user
+  // };
 
   useEffect(() => {
     setLoading(true);
@@ -38,11 +47,15 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
       })
       .catch((err) => {
         console.error("Failed to fetch posts", err);
+        // if (!hasShownToast.current) {
+        //   showToast(`Failed to fetch posts`, "error");
+        //   hasShownToast.current = true;
+        // }
+
         setLoading(false);
         setError(true);
       });
   }, [currentUser?.username, reloadKey]);
-
 
   useEffect(() => {
     if (showComments) {
@@ -53,19 +66,9 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
     return () => document.body.classList.remove("no-scroll");
   }, [showComments]);
 
-
-  const handleFollow = (username?: string) => {
-    if (!username) return;
-
-    setFollowedUsers(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(username)) {
-        newSet.delete(username);
-      } else {
-        newSet.add(username);
-      }
-      return newSet;
-    });
+  const handleFollow = async (targetUsername?: string) => {
+    if (!targetUsername) return;
+    await toggleFollow(targetUsername);
   };
 
   const handleLike = async (postId: string) => {
@@ -77,7 +80,8 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
           : null;
 
     if (!actorUrl) {
-      console.warn("Like toggle aborted: missing actor URL");
+      showToast(`Like toggle aborted: missing actor URL`, "warning");
+
       return;
     }
 
@@ -85,7 +89,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
     const objectUrl = post?.activityPubObject?.id;
 
     if (!post || !objectUrl) {
-      console.error("Like toggle failed: missing post or activityPubObject.id");
+      showToast(`Like toggle failed: missing post or activityPubObject.id`, "error");
       return;
     }
 
@@ -121,6 +125,8 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
       );
     } catch (err) {
       console.error("Like toggle error:", err);
+      showToast(`Like toggle error`, "error");
+
     }
   };
 
@@ -161,6 +167,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
 
   return (
     <div className="feed-container">
+      {loading && <div className="feed-empty">Loading posts...</div>}
       {posts.length === 0 && !error && <div className="feed-empty">No posts yet.</div>}
       {posts.length === 0 && error && <div className="feed-failed">Failed to fetch posts.</div>}
       {posts.map((post) => (
@@ -176,14 +183,14 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
             <div className="post-meta">
               <div className="post-user-row">
                 <Link to={`/profile/${post.user?.username}`} className="post-username">
-                  {post.user?.name}
+                  {post.user?.username}
                 </Link>
                 {post.user?.username !== currentUser?.username && (
                   <span
                     className="follow-text"
                     onClick={() => handleFollow(post.user?.username)}
                   >
-                    • {followedUsers.has(post.user?.username || "") ? "Following" : "Follow"}
+                    • {isFollowing(post.user?.username || "") ? "Following" : "Follow"}
                   </span>
                 )}
 

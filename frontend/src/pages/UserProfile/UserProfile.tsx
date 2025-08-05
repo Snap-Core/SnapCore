@@ -1,124 +1,211 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import './UserProfile.css';
 import { UserInfoInput } from "../../components/UserInfoInput";
-import { fetcher } from "../../utils/fetcher";
 import genericProfilePic from '../../assets/generic-profile-p.jpg';
 import { useAuth } from "../../auth/useAuth";
 import { useParams } from "react-router-dom";
 import type { User } from "../../types/User";
 import { Feed } from "../Feed/Feed";
+// import { mockUsers } from "../../services/mockPosts";
+import { useFollow } from "../../components/FollowContext";
+import { getFollowersList, getFollowingList } from "../../services/followService";
+import { useToast } from "../../components/ToastContext";
+import { fetcher } from "../../utils/fetcher";
 
 export const UserProfile = () => {
-  const { username: routeUsername } = useParams<{ username?: string }>();
-  const { user: currentUser } = useAuth();
-  const [userProfile, setUserProfile] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
+    const { username: routeUser } = useParams<{ username?: string }>();
+    const { user: currentUser } = useAuth();
+    const [userProfile, setUserProfile] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
+    const { followedUsers, followers, toggleFollow } = useFollow();
+    const isFollowing = !!userProfile?.username && followedUsers.has(userProfile.username);
+    const followerCount = followers.size;
+    const followingCount = followedUsers.size;
+    const [profileFollowersCount, setProfileFollowersCount] = useState(0);
+    const [profileFollowingCount, setProfileFollowingCount] = useState(0);
+    const pluralize = (count: number, noun: string) => `${count} ${noun}${count !== 1 ? "s" : ""}`;
+    // const currentUser = {
+    //     username: "Happy", // Simulate logged-in user
+    // };
+    const routeUsername = routeUser || currentUser?.username;
+    const isOwnProfile = !routeUsername || routeUsername === currentUser?.username;
+    const { showToast } = useToast();
+    const hasShownToast = useRef(false);
 
-  // Determine if viewing own profile
-  const isOwnProfile = !routeUsername || routeUsername === currentUser?.username;
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      try {
-        if (isOwnProfile) {
-          const data = await fetcher("/users/me");
-          setUserProfile(data.user);
-        } else {
-          const data = await fetcher(`/users/by-username/${encodeURIComponent(routeUsername!)}`);
-          setUserProfile(data.user);
-        }
-      } catch {
-        setUserProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, [routeUsername, isOwnProfile]);
-
-  const handleProfilePicChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setNewProfilePic(url);
-      setUserProfile((prev) =>
-        prev
-          ? {
-              ...prev,
-              profilePic: url,
+    useEffect(() => {
+        const fetchProfile = async () => {
+            setLoading(true);
+            try {
+                if (isOwnProfile) {
+                    const data = await fetcher("/users/me");
+                    setUserProfile(data.user);
+                } else {
+                    const data = await fetcher(`/users/by-username/${encodeURIComponent(routeUsername!)}`);
+                    setUserProfile(data.user);
+                }
+            } catch {
+                if (!hasShownToast.current) {
+                    showToast(`Error while fetching user: ${routeUsername}`, "error");
+                    hasShownToast.current = true;
+                }
+                setUserProfile(null);
+            } finally {
+                setLoading(false);
             }
-          : null
-      );
+        };
+        fetchProfile();
+    }, [routeUsername, isOwnProfile]);
+
+    //    mock user
+    // useEffect(() => {
+
+
+    //     const fetchUserProfile = async () => {
+    //         setLoading(true);
+
+    //         setLoading(true);
+
+    //         const foundUser = mockUsers.find((u) => u.username === routeUsername);
+
+    //         if (foundUser) {
+    //             setUserProfile(foundUser);
+    //         } else {
+
+    //             if (!hasShownToast.current) {
+    //                 showToast(`No user found for username: ${routeUsername}`, "error");
+    //                 hasShownToast.current = true;
+    //             }
+    //             setUserProfile(null);
+
+    //         }
+
+    //         setLoading(false);
+    //     };
+
+    //     fetchUserProfile();
+    // }, [routeUsername, isOwnProfile]);
+
+    const fetchProfileFollowCounts = async () => {
+        if (!userProfile || isOwnProfile) return;
+
+        try {
+            const profileUser = `https://yourdomain.com/users/${userProfile.username}`;
+            const followingList = await getFollowingList(profileUser);
+            const followerList = await getFollowersList(profileUser);
+
+            setProfileFollowingCount(followingList.length);
+            setProfileFollowersCount(followerList.length);
+        } catch (error) {
+            console.error("Failed to load profile follow data:", error);
+            showToast(`Failed to load profile follow data`, "error");
+        }
+    };
+
+    useEffect(() => {
+        fetchProfileFollowCounts();
+    }, [userProfile, isOwnProfile]);
+
+
+    const handleFollowToggle = async () => {
+        if (!userProfile?.username) return;
+        await toggleFollow(userProfile.username);
+        await fetchProfileFollowCounts();
+    };
+
+
+
+    const handleProfilePicChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            setNewProfilePic(url);
+            setUserProfile((prev) =>
+                prev
+                    ? {
+                        ...prev,
+                        profilePic: url,
+                    }
+                    : null
+            );
+        }
+    };
+
+
+    if (loading) {
+        return <div className="user-profile-container">Loading user profile...</div>;
     }
-  };
 
-  const handleFollowToggle = () => {
-    setIsFollowing((prev) => !prev);
-    // TODO: Add API call for follow/unfollow
-  };
+    if (!userProfile) {
+        return <div className="user-profile-container">User not found</div>;
+    }
 
-  if (loading) {
-    return <div className="user-profile-container">Loading user profile...</div>;
-  }
+    // Show onboarding if not activated and viewing own profile
+    if (isOwnProfile && !userProfile.activated) {
+        return (
+            <UserInfoInput
+                userId={userProfile.id}
+                onClose={() => { }}
+                onSubmit={fields => {
+                    setUserProfile({ ...userProfile, ...fields, activated: true });
+                }}
+            />
+        );
+    }
 
-  if (!userProfile) {
-    return <div className="user-profile-container">User not found</div>;
-  }
-
-  // Show onboarding if not activated and viewing own profile
-  if (isOwnProfile && !userProfile.activated) {
     return (
-      <UserInfoInput
-        userId={userProfile.id}
-        onClose={() => {}}
-        onSubmit={fields => {
-          setUserProfile({ ...userProfile, ...fields, activated: true });
-        }}
-      />
-    );
-  }
+        <div className="user-profile-container">
+            <div className="user-header">
+                <div className="profile-pic-wrapper">
+                    <img
+                        src={newProfilePic || userProfile.profilePic || genericProfilePic}
+                        alt="Profile"
+                        className="profile-pic"
+                    />
+                    {isOwnProfile && (
+                        <div className="edit-pic-overlay" title="Upload new profile picture">
+                            <label className="edit-pic-label">
+                                Change
+                                <input type="file" accept="image/*" onChange={handleProfilePicChange} hidden />
+                            </label>
+                        </div>
+                    )}
+                </div>
+                <div className="user-info">
+                    <h2>{userProfile.displayName}</h2>
+                    <p className="username">@{userProfile.username}</p>
+                    <p className="bio">{userProfile.summary}</p>
 
-  return (
-    <div className="user-profile-container">
-      <div className="user-header">
-        <div className="profile-pic-wrapper">
-          <img
-            src={newProfilePic || userProfile.profilePic || genericProfilePic}
-            alt="Profile"
-            className="profile-pic"
-          />
-          {isOwnProfile && (
-            <div className="edit-pic-overlay" title="Upload new profile picture">
-              <label className="edit-pic-label">
-                Change
-                <input type="file" accept="image/*" onChange={handleProfilePicChange} hidden />
-              </label>
+                    <div className="follow-info">
+                        <div className="follow-info">
+                            {isOwnProfile ? (
+                                <>
+                                    <p>{pluralize(followerCount, "follower")}</p>
+                                    <p>{pluralize(followingCount, "following")}</p>
+                                </>
+                            ) : (
+                                <>
+                                    <p>{pluralize(profileFollowersCount, "follower")}</p>
+                                    <p>{pluralize(profileFollowingCount, "following")}</p>
+                                </>
+                            )}
+                        </div>
+
+
+                    </div>
+                    {!isOwnProfile && (
+                        <button className="follow-button" onClick={handleFollowToggle}>
+                            {isFollowing ? "Following" : "Follow"}
+                        </button>
+                    )}
+                </div>
             </div>
-          )}
+            <div className="user-posts">
+                <h3>Posts</h3>
+                <Feed username={userProfile.username} />
+            </div>
         </div>
-        <div className="user-info">
-          <h2>{userProfile.displayName || userProfile.name}</h2>
-          <p className="username">@{userProfile.username}</p>
-          <p className="bio">{userProfile.summary}</p>
-          <div className="follow-info">
-            <span><strong>{userProfile.followers}</strong> Followers</span>
-            <span><strong>{userProfile.following}</strong> Following</span>
-          </div>
-          {!isOwnProfile && (
-            <button className="follow-button" onClick={handleFollowToggle}>
-              {isFollowing ? "Following" : "Follow"}
-            </button>
-          )}
-        </div>
-      </div>
-      <div className="user-posts">
-        <h3>Posts</h3>
-        <Feed username={userProfile.username} />
-      </div>
-    </div>
-  );
+    );
 };
 
