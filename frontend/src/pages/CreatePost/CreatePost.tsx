@@ -1,17 +1,24 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { fetcher } from "../../utils/fetcher";
-import type { FetcherOptions } from "../../types/FetcherOptions";
 import "./CreatePost.css";
+// import { useAuth } from "../../auth/useAuth";
+import { createPost } from "../../services/postService";
+import { useNavigate } from "react-router-dom";
 
 const MAX_TEXT = 1000;
-const MAX_IMAGES = 10;
 const MAX_IMAGE_MB = 5;
+const MAX_VIDEO_MB = 15;
+const MAX_FILES = 10;
+const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
+const allowedVideoTypes = ["video/mp4", "video/webm"];
 
 export const CreatePost = () => {
   const [text, setText] = useState("");
-  const [images, setImages] = useState<File[]>([]);
+  const [media, setMedia] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
+
 
   const handleTextChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value.slice(0, MAX_TEXT));
@@ -19,15 +26,15 @@ export const CreatePost = () => {
   };
 
   const handleRemoveImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+    setMedia((prev) => prev.filter((_, i) => i !== index));
     setError(null);
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!text && images.length === 0) {
-      setError("Post must have text or images.");
+    if (!text && media.length === 0) {
+      setError("Post must have text, picture(s) or video(s).");
       return;
     }
 
@@ -36,47 +43,36 @@ export const CreatePost = () => {
       return;
     }
 
-    if (images.length > 0) {
-      if (images.length > MAX_IMAGES) {
-        setError(`You can upload up to ${MAX_IMAGES} images.`);
+    if (media.length > 0) {
+      if (media.length > MAX_FILES) {
+        setError(`You can upload up to ${MAX_FILES} files.`);
         return;
-      }
-      for (const file of images) {
-        if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
-          setError(`Each image must be ≤ ${MAX_IMAGE_MB}MB.`);
-          return;
-        }
-        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-          setError("Only JPG, PNG, or WEBP images are allowed.");
-          return;
-        }
       }
     }
 
     setError(null);
 
-    const payload: FetcherOptions["body"] = {
-      text: text || undefined,
-      images: images.length > 0 ? images.map((img) => img.name) : undefined,
-    };
+    // if (!currentUser || !currentUser.username) {
+    //   setError("You must be logged in to post.");
+    //   return;
+    // }
 
     try {
-      await fetcher("/posts", {
-        method: "POST",
-        body: payload,
+      const newPost = await createPost({
+        content: text,
+        actor: "Test user",
+        // actor: currentUser.username,
+        media: media,
       });
-      setText("");
-      setImages([]);
+      console.log("Post created:", newPost);
       setSuccess("Your post was uploaded successfully!");
-      setTimeout(() => setSuccess(null), 5000);
-    } catch (err: unknown) {
-      if (typeof err === "object" && err !== null && "error" in err) {
-        setError((err as { error?: string }).error || "Failed to create post.");
-      } else if (typeof err === "string") {
-        setError(err);
-      } else {
-        setError("Failed to create post.");
-      }
+
+      setTimeout(() => {
+        setSuccess(null);
+        navigate("/feed");
+      }, 3000);
+    } catch (err: any) {
+      setError(err.message || "Failed to create post");
     }
   };
 
@@ -88,8 +84,15 @@ export const CreatePost = () => {
           <strong>Rules:</strong>
           <ul>
             <li>
-              Images: up to {MAX_IMAGES} images (JPG, PNG, WEBP), each ≤{" "}
+              Upload up to {MAX_FILES} files.
+            </li>
+            <li>
+              Images: (JPG, PNG, WEBP), each ≤{" "}
               {MAX_IMAGE_MB}MB
+            </li>
+            <li>
+              Videos: (MP4, WEBP), each ≤{" "}
+              {MAX_VIDEO_MB}MB
             </li>
           </ul>
         </div>
@@ -107,38 +110,45 @@ export const CreatePost = () => {
           <label className="file-label">
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
               multiple
               onChange={(e) => {
                 if (!e.target.files) return;
                 const files = Array.from(e.target.files);
 
                 for (const file of files) {
-                  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-                    setError("Only JPG, PNG, or WEBP images are allowed.");
+                  if (![...allowedImageTypes, ...allowedVideoTypes].includes(file.type)) {
+                    setError("Only JPG, PNG, WEBP images or MP4/WEBM videos are allowed.");
                     return;
                   }
-                  if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+
+                  if (allowedImageTypes.includes(file.type) && file.size > MAX_IMAGE_MB * 1024 * 1024) {
                     setError(`Each image must be ≤ ${MAX_IMAGE_MB}MB.`);
                     return;
                   }
+
+                  if (allowedVideoTypes.includes(file.type) && file.size > MAX_VIDEO_MB * 1024 * 1024) {
+                    setError(`Each video must be ≤ ${MAX_VIDEO_MB}MB.`);
+                    return;
+                  }
                 }
 
-                if (images.length + files.length > MAX_IMAGES) {
-                  setError(`You can upload up to ${MAX_IMAGES} images.`);
+                if (media.length + files.length > MAX_FILES) {
+                  setError(`You can upload up to ${MAX_FILES} files.`);
                   return;
                 }
 
-                setImages([...images, ...files]);
+                setMedia([...media, ...files]);
                 setError(null);
               }}
             />
-            Add Images
+
+            Add Files
           </label>
         </div>
-        {images.length > 0 && (
+        {media.length > 0 && (
           <div className="preview-list">
-            {images.map((img, i) => (
+            {media.map((img, i) => (
               <span key={i} className="preview-item">
                 {img.name}
                 <button

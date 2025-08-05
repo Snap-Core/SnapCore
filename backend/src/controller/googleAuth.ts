@@ -29,7 +29,7 @@ export const handleGoogleAuthToken = async (
       return next(formatErrorResponse(400, `${userInfo.error}: ${userInfo.error_description}`));
     }
 
-    await createUserIfNotExists(userInfo);
+    const creationResult = await createUserIfNotExists(userInfo);
 
     req.session.user = {
       googleId: userInfo.sub,
@@ -41,6 +41,7 @@ export const handleGoogleAuthToken = async (
       googleId: userInfo.sub,
       userName: userInfo.name,
       email: userInfo.email,
+      isExisting: creationResult.isExisting,
     });
   } catch (err: any) {
     return next(formatErrorResponse(500, err?.message || "Internal Server Error"));
