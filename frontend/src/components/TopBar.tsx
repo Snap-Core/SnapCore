@@ -9,7 +9,7 @@ export const TopBar = () => {
   return (
     <nav className="navbar">
       <div>
-        <Link to="/" style={{ marginRight: 16 }}>Home</Link>
+        <Link to="/" style={{ marginRight: 16 }}>Discover</Link>
         <Link to="/feed" style={{ marginRight: 16 }}>Feed</Link>
         <Link to="/create-post" style={{ marginRight: 16 }}>Create Post</Link>
       </div>

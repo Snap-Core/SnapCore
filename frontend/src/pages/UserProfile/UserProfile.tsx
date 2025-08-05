@@ -16,7 +16,6 @@ export const UserProfile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
 
-  // Determine if viewing own profile
   const isOwnProfile = !routeUsername || routeUsername === currentUser?.username;
 
   useEffect(() => {
@@ -68,7 +67,6 @@ export const UserProfile = () => {
     return <div className="user-profile-container">User not found</div>;
   }
 
-  // Show onboarding if not activated and viewing own profile
   if (isOwnProfile && !userProfile.activated) {
     return (
       <UserInfoInput
