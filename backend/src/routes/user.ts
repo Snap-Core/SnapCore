@@ -9,6 +9,6 @@ router.post("/logout", requireAuth, logout);
 
 router.patch("/", requireAuth, updateUserController);
 
-router.get("/by-username/:username", requireAuth, getUserByUsername);
+router.get("/:username", requireAuth, getUserByUsername);
 
 export default router;

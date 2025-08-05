@@ -1,5 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { findUserById, updateUser, scanUsers, findUserByUsername } from "../services/dynamoUserService";
+import {User} from "../../../shared/types/user";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const backendServerUrl = new URL(process.env.BACKEND_SERVER_URL as string);
 
 export const getCurrentUser = async (req: Request, res: Response) => {
   if (!req.user?.googleId) {
@@ -53,11 +59,14 @@ export const getUserByUsername = async (req: Request, res: Response) => {
   if (!username) {
     return res.status(400).json({ error: "Username is required" });
   }
+
   const user = await findUserByUsername(username);
   if (!user) {
-    return res.status(404).json({ error: "User not foundd" });
+    return res.status(404).json({ error: "User not found" });
   }
+
   const { id, email, ...rest } = user;
-  res.json({ user: rest });
+
+  res.json({...rest, fediverseId: `${backendServerUrl}users/${username}`} as User);
 };
 

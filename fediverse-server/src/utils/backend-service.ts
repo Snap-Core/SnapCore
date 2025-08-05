@@ -15,10 +15,10 @@ export const requestBackendServer = async (path: string, options : Record<string
 
    options.headers = headers;
 
-  const response = await fetch(`${backendServerUrl}${path}`, options);
+  const response = await fetch(`${backendServerUrl}api/${path}`, options);
 
   if (!response.ok) {
-    throw new Error();
+    throw new Error(response.statusText);
   }
 
   return await response.json();

@@ -1,5 +1,5 @@
 export interface User {
-  id: string;
+  fediverseId: string;
   username: string;
   displayName: string;
   summary?: string;

@@ -9,24 +9,24 @@ export function getPersonFromUser(user: User): Person {
       "https://www.w3.org/ns/activitystreams",
       "https://w3id.org/security/v1"
     ],
-    id: user.id,
+    id: user.fediverseId,
     type: "Person",
     preferredUsername: user.username,
     name: user.displayName,
     summary: user.summary || '',
-    inbox: `${user.id}/inbox`,
-    outbox: `${user.id}/outbox`,
-    followers: `${user.id}/followers`,
-    following: `${user.id}/following`,
-    liked: `${user.id}/liked`,
+    inbox: `${user.fediverseId}/inbox`,
+    outbox: `${user.fediverseId}/outbox`,
+    followers: `${user.fediverseId}/followers`,
+    following: `${user.fediverseId}/following`,
+    liked: `${user.fediverseId}/liked`,
     icon: {
       type: "Image",
       mediaType: "image/jpeg",
       url: user.profilePicUrl
     },
     publicKey: {
-      id: `${user.id}#main-key`,
-      owner: user.id,
+      id: `${user.fediverseId}#main-key`,
+      owner: user.fediverseId,
       publicKeyPem: user.publicKey
     }
   };
@@ -39,23 +39,23 @@ export function getGroupFromCommunity(community: Community): Group {
       "https://www.w3.org/ns/activitystreams",
       "https://w3id.org/security/v1"
     ],
-    id: community.id,
+    id: community.fediverseId,
     type: "Group",
     preferredUsername: community.handle,
     name: community.displayName,
     summary: community.summary || '',
-    inbox: `${community.id}/inbox`,
-    outbox: `${community.id}/outbox`,
-    followers: `${community.id}/followers`,
-    following: `${community.id}/following`,
+    inbox: `${community.fediverseId}/inbox`,
+    outbox: `${community.fediverseId}/outbox`,
+    followers: `${community.fediverseId}/followers`,
+    following: `${community.fediverseId}/following`,
     icon: {
       type: "Image",
       mediaType: "image/jpeg",
       url: community.communityPicUrl
     },
     publicKey: {
-      id: `${community.id}#main-key`,
-      owner: community.id,
+      id: `${community.fediverseId}#main-key`,
+      owner: community.fediverseId,
       publicKeyPem:  community.handle,
     },
     published: community.created,
@@ -65,7 +65,7 @@ export function getGroupFromCommunity(community: Community): Group {
 
 export function getUserFromPerson(person: Person): User {
   return {
-    id: person.id,
+    fediverseId: person.id,
     username: person.preferredUsername || '',
     displayName: person.name || '',
     summary: person.summary || '',
