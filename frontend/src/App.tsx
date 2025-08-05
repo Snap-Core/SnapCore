@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { HomePage } from "./pages/HomePage/HomePage";
+import { DiscoverPage } from "./pages/DiscoverPage/DiscoverPage";
 import { CreatePost } from "./pages/CreatePost/CreatePost";
 import { Feed } from "./pages/Feed/Feed";
 import { PageNotFound } from "./pages/PageNotFound/PageNotFound";
@@ -15,11 +15,11 @@ export const App = () => (
       <TopBar />
       <div className="page-content">
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<DiscoverPage />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
+          <Route path="/profile/:username" element={<UserProfile />} />
           <Route path="*" element={<PageNotFound />} />
-          <Route path="/profile" element={<UserProfile />} />
         </Routes>
       </div>
     </AuthProvider>

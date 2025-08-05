@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { findUserById, updateUser, scanUsers, findUserByUsername } from "../services/dynamoUserService";
+import { findUserById, updateUser, scanUsers, findUserByUsername, searchUsersByQuery } from "../services/dynamoUserService";
 import {User} from "../../../shared/types/user";
 import dotenv from "dotenv";
 import {requestFediverseServer} from "../utils/fediverse-service";
@@ -61,14 +61,20 @@ export const getUserByUsername = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Username is required" });
   }
 
-  const user = await findUserByUsername(username);
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
+  try {
+    const user = await findUserByUsername(username);
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const { id, email, ...rest } = user;
+
+    res.json({...rest, fediverseId: `${backendServerUrl}users/${username}`} as User);
+  } catch (error) {
+    console.error("Error fetching user by username:", error);
+    res.status(500).json({ error: "Failed to fetch user" });
   }
-
-  const { id, email, ...rest } = user;
-
-  res.json({...rest, fediverseId: `${backendServerUrl}users/${username}`} as User);
 };
 
 export const getExternalUserFromUsername = async (req: Request, res: Response) => {
@@ -96,3 +102,17 @@ export const getExternalUserFromUsername = async (req: Request, res: Response) =
   res.status(200).json(user);
 };
 
+export const searchUsers = async (req: Request, res: Response) => {
+  try {
+    const { q: query, limit = 20 } = req.query;
+    
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: "Search query required" });
+    }
+
+    const users = await searchUsersByQuery(query, Number(limit));
+    res.json({ users, query });
+  } catch (err) {
+    res.status(500).json({ error: "Search failed" });
+  }
+};

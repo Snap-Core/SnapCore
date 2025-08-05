@@ -4,40 +4,46 @@ import { UserInfoInput } from "../../components/UserInfoInput";
 import { fetcher } from "../../utils/fetcher";
 import genericProfilePic from '../../assets/generic-profile-p.jpg';
 import { useAuth } from "../../auth/useAuth";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import type { User } from "../../types/User";
 import { Feed } from "../Feed/Feed";
 
 export const UserProfile = () => {
-  const { username: routeUsername } = useParams<{ username?: string }>();
+  const { username: routeUsername } = useParams<{ username: string }>();
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
 
-  // Determine if viewing own profile
-  const isOwnProfile = !routeUsername || routeUsername === currentUser?.username;
+  const isOwnProfile = routeUsername === currentUser?.username;
 
   useEffect(() => {
+    if (!routeUsername && currentUser?.username) {
+      navigate(`/profile/${currentUser.username}`, { replace: true });
+      return;
+    }
+  }, [routeUsername, currentUser, navigate]);
+
+  useEffect(() => {
+    if (!routeUsername) return;
+
     const fetchProfile = async () => {
       setLoading(true);
       try {
-        if (isOwnProfile) {
-          const data = await fetcher("/users/me");
-          setUserProfile(data.user);
-        } else {
-          const data = await fetcher(`/users/by-username/${encodeURIComponent(routeUsername!)}`);
-          setUserProfile(data.user);
-        }
-      } catch {
+        const data = await fetcher(`/users/by-username/${encodeURIComponent(routeUsername)}`);
+        setUserProfile(data.user);
+      } catch (error) {
+        console.error("Failed to fetch user profile:", error);
         setUserProfile(null);
       } finally {
         setLoading(false);
       }
     };
+
     fetchProfile();
-  }, [routeUsername, isOwnProfile]);
+  }, [routeUsername]);
 
   const handleProfilePicChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -60,6 +66,10 @@ export const UserProfile = () => {
     // TODO: Add API call for follow/unfollow
   };
 
+  if (!routeUsername) {
+    return <div className="user-profile-container">Loading...</div>;
+  }
+
   if (loading) {
     return <div className="user-profile-container">Loading user profile...</div>;
   }
@@ -68,7 +78,6 @@ export const UserProfile = () => {
     return <div className="user-profile-container">User not found</div>;
   }
 
-  // Show onboarding if not activated and viewing own profile
   if (isOwnProfile && !userProfile.activated) {
     return (
       <UserInfoInput
@@ -104,8 +113,8 @@ export const UserProfile = () => {
           <p className="username">@{userProfile.username}</p>
           <p className="bio">{userProfile.summary}</p>
           <div className="follow-info">
-            <span><strong>{userProfile.followers}</strong> Followers</span>
-            <span><strong>{userProfile.following}</strong> Following</span>
+            <span><strong>{userProfile.followers || 0}</strong> Followers</span>
+            <span><strong>{userProfile.following || 0}</strong> Following</span>
           </div>
           {!isOwnProfile && (
             <button className="follow-button" onClick={handleFollowToggle}>
