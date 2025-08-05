@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getPersonFromUser } from '../utils/convert-activity-pub-objects';
+import {getPersonFromUser, getUserFromPerson} from '../utils/convert-activity-pub-objects';
 import {User} from "../../../shared/types/user";
 import {requestBackendServer} from "../utils/backend-service";
 import {getExternalServer} from "../utils/external-federated-service";
@@ -47,7 +47,7 @@ export const getPersonFromUsername = async (req: Request, res: Response) => {
   return res.redirect(`${frontendServerUrl}profile/${username}`); // todo: confirm structure of url
 };
 
-export const getExternalPersonFromUsername = async (req: Request, res: Response) => {
+export const getExternalUserFromUsername = async (req: Request, res: Response) => {
   const { username, domain } = req.query as { username: string; domain: string };
 
   if (!username || !domain) {
@@ -84,6 +84,8 @@ export const getExternalPersonFromUsername = async (req: Request, res: Response)
     return res.status(500).json({ error: 'Could not deserialize person response' });
   }
 
+  const user : User = getUserFromPerson(person);
+
   res.setHeader('Content-Type', 'application/activity+json');
-  res.status(200).json(person);
+  res.status(200).json(user);
 };

@@ -69,6 +69,10 @@ export function getUserFromPerson(person: Person): User {
     username: person.preferredUsername || '',
     displayName: person.name || '',
     summary: person.summary || '',
+    inbox: person.inbox,
+    outbox: person.outbox,
+    followers: person.followers,
+    following: person.following,
     profilePicUrl: person.icon?.url || '',
     publicKey: person.publicKey.publicKeyPem
   };
