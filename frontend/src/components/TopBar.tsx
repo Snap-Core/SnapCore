@@ -16,7 +16,7 @@ export const TopBar = () => {
       <div className="nav-right">
         {user ? (
           <>
-            <Link to={`/profile`}>
+            <Link to={`/profile/${user.username}`}>
               <img
                 src={user.profilePic || genericProfilePic}
                 alt={user.name}

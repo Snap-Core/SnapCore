@@ -53,12 +53,19 @@ export const getUserByUsername = async (req: Request, res: Response) => {
   if (!username) {
     return res.status(400).json({ error: "Username is required" });
   }
-  const user = await findUserByUsername(username);
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
+  
+  try {
+    const user = await findUserByUsername(username);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const { id, email, encryptedPrivateKey, publicKey, ...rest } = user;
+    res.json({ user: rest });
+  } catch (error) {
+    console.error("Error fetching user by username:", error);
+    res.status(500).json({ error: "Failed to fetch user" });
   }
-  const { id, email, encryptedPrivateKey, ...rest } = user;
-  res.json({ user: rest });
 };
 
 export const searchUsers = async (req: Request, res: Response) => {

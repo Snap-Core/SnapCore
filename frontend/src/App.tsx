@@ -18,8 +18,8 @@ export const App = () => (
           <Route path="/" element={<DiscoverPage />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
+          <Route path="/profile/:username" element={<UserProfile />} />
           <Route path="*" element={<PageNotFound />} />
-          <Route path="/profile" element={<UserProfile />} />
         </Routes>
       </div>
     </AuthProvider>
