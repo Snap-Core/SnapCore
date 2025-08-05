@@ -3,6 +3,7 @@ import { GetCommand, PutCommand, UpdateCommand, ScanCommand } from "@aws-sdk/lib
 import { GoogleUserInfo } from "../types/AuthTypes";
 import dotenv from 'dotenv';
 import {generateKeyPair} from "../utils/key-pair-generation";
+import Fuse from 'fuse.js';
 
 dotenv.config();
 
@@ -148,5 +149,36 @@ export async function updateUser(
 export async function scanUsers() {
   const cmd = new ScanCommand({ TableName: tableName });
   const result = await getDynamoClient().send(cmd);
-  return (result.Items || []).map(({ id, email, ...rest }) => rest);
+  return (result.Items || []).map(({ id, email, name, encryptedPrivateKey, publicKey, ...rest }) => rest);
+}
+
+export async function searchUsersByQuery(query: string, limit: number = 20) {
+  const allUsersCmd = new ScanCommand({
+    TableName: tableName,
+    FilterExpression: "attribute_exists(username) AND attribute_exists(displayName)"
+  });
+  
+  const allUsersResult = await getDynamoClient().send(allUsersCmd);
+  const users = (allUsersResult.Items || []).map(({ id, email, name, encryptedPrivateKey, publicKey, ...rest }) => rest);
+
+  const fuseOptions = {
+    keys: [
+      { name: 'username', weight: 0.6 },
+      { name: 'displayName', weight: 0.4 },
+      { name: 'summary', weight: 0.2 }
+    ],
+    threshold: 0.4, 
+    distance: 100, 
+    includeScore: true,
+    minMatchCharLength: 2,
+    ignoreLocation: true 
+  };
+
+  const fuse = new Fuse(users, fuseOptions);
+  const results = fuse.search(query).slice(0, limit);
+
+  return results.map(result => ({
+    ...result.item,
+    searchScore: result.score 
+  }));
 }

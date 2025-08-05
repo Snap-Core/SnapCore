@@ -5,5 +5,7 @@ export type User = {
   summary?: string;
   email?: string;
   profilePic?: string;
+  followers?: number;
+  following?: number;
   activated?: boolean;
 };

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getCurrentUser, logout, updateUserController, getUserByUsername } from "../controller/userController";
+import { getCurrentUser, logout, updateUserController, getUserByUsername, getAllUsers, searchUsers } from "../controller/userController";
 import { requireAuth } from "../middleware/authMiddleware";
 const router = express.Router();
 
@@ -10,5 +10,9 @@ router.post("/logout", requireAuth, logout);
 router.patch("/", requireAuth, updateUserController);
 
 router.get("/by-username/:username", requireAuth, getUserByUsername);
+
+router.get("/", requireAuth, getAllUsers)
+
+router.get("/search", searchUsers);
 
 export default router;

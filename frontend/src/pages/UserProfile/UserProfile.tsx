@@ -1,20 +1,20 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import './UserProfile.css';
 import { UserInfoInput } from "../../components/UserInfoInput";
 import genericProfilePic from '../../assets/generic-profile-p.jpg';
 import { useAuth } from "../../auth/useAuth";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import type { User } from "../../types/User";
 import { Feed } from "../Feed/Feed";
-// import { mockUsers } from "../../services/mockPosts";
 import { useFollow } from "../../components/FollowContext";
 import { getFollowersList, getFollowingList } from "../../services/followService";
 import { useToast } from "../../components/ToastContext";
 import { fetcher } from "../../utils/fetcher";
 
 export const UserProfile = () => {
-    const { username: routeUser } = useParams<{ username?: string }>();
+    const { username: routeUsername } = useParams<{ username: string }>();
     const { user: currentUser } = useAuth();
+    const navigate = useNavigate();
     const [userProfile, setUserProfile] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
@@ -25,67 +25,35 @@ export const UserProfile = () => {
     const [profileFollowersCount, setProfileFollowersCount] = useState(0);
     const [profileFollowingCount, setProfileFollowingCount] = useState(0);
     const pluralize = (count: number, noun: string) => `${count} ${noun}${count !== 1 ? "s" : ""}`;
-    // const currentUser = {
-    //     username: "Happy", // Simulate logged-in user
-    // };
-    const routeUsername = routeUser || currentUser?.username;
-    const isOwnProfile = !routeUsername || routeUsername === currentUser?.username;
     const { showToast } = useToast();
-    const hasShownToast = useRef(false);
 
+    const isOwnProfile = routeUsername === currentUser?.username;
 
     useEffect(() => {
+        if (!routeUsername && currentUser?.username) {
+            navigate(`/profile/${currentUser.username}`, { replace: true });
+            return;
+        }
+    }, [routeUsername, currentUser, navigate]);
+
+    useEffect(() => {
+        if (!routeUsername) return;
+
         const fetchProfile = async () => {
             setLoading(true);
             try {
-                if (isOwnProfile) {
-                    const data = await fetcher("/users/me");
-                    setUserProfile(data.user);
-                } else {
-                    const data = await fetcher(`/users/by-username/${encodeURIComponent(routeUsername!)}`);
-                    setUserProfile(data.user);
-                }
-            } catch {
-                if (!hasShownToast.current) {
-                    showToast(`Error while fetching user: ${routeUsername}`, "error");
-                    hasShownToast.current = true;
-                }
+                const data = await fetcher(`/users/by-username/${encodeURIComponent(routeUsername)}`);
+                setUserProfile(data.user);
+            } catch (error) {
+                console.error("Failed to fetch user profile:", error);
                 setUserProfile(null);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchProfile();
-    }, [routeUsername, isOwnProfile]);
-
-    //    mock user
-    // useEffect(() => {
-
-
-    //     const fetchUserProfile = async () => {
-    //         setLoading(true);
-
-    //         setLoading(true);
-
-    //         const foundUser = mockUsers.find((u) => u.username === routeUsername);
-
-    //         if (foundUser) {
-    //             setUserProfile(foundUser);
-    //         } else {
-
-    //             if (!hasShownToast.current) {
-    //                 showToast(`No user found for username: ${routeUsername}`, "error");
-    //                 hasShownToast.current = true;
-    //             }
-    //             setUserProfile(null);
-
-    //         }
-
-    //         setLoading(false);
-    //     };
-
-    //     fetchUserProfile();
-    // }, [routeUsername, isOwnProfile]);
+    }, [routeUsername]);
 
     const fetchProfileFollowCounts = async () => {
         if (!userProfile || isOwnProfile) return;
@@ -133,6 +101,10 @@ export const UserProfile = () => {
     };
 
 
+    if (!routeUsername) {
+        return <div className="user-profile-container">Loading...</div>;
+    }
+
     if (loading) {
         return <div className="user-profile-container">Loading user profile...</div>;
     }
@@ -141,7 +113,6 @@ export const UserProfile = () => {
         return <div className="user-profile-container">User not found</div>;
     }
 
-    // Show onboarding if not activated and viewing own profile
     if (isOwnProfile && !userProfile.activated) {
         return (
             <UserInfoInput
