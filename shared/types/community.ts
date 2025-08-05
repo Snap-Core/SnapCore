@@ -1,5 +1,5 @@
 export interface Community {
-  id: string;
+  fediverseId: string;
   handle: string;
   displayName: string;
   summary?: string;

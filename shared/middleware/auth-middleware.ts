@@ -17,7 +17,6 @@ export const isJwtAuthenticated = (jwtSecret: string, authHeader : string | unde
   return false;
 }
 
-// todo: add token to backend requests that call fediverse server
 export const token = (jwtSecret: string) => jwt.sign(
   {
     iss: 'fediverse-server',

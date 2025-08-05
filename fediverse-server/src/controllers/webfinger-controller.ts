@@ -39,7 +39,7 @@ export const handleWebFinger = async (req: Request, res: Response) => {
         },
       });
   } catch (error) {
-    return res.status(500).json('Could not retrieve user from backend server')
+    return res.status(500).json('Could not retrieve user from backend server\n' +  error);
   }
 
   if (!user) {
