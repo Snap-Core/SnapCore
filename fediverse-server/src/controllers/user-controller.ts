@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import {getPersonFromUser, getUserFromPerson} from '../utils/convert-activity-pub-objects';
-import {User} from "../shared/types/user";
+import {User} from "../types/user";
 import {requestBackendServer} from "../utils/backend-service";
 import {getExternalServer} from "../utils/external-federated-service";
 import {WebfingerResponse} from "../types/webfinger-response";

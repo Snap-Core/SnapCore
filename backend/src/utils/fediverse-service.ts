@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import {token} from "../shared/middleware/auth-middleware";
+import {token} from "../middleware/fediverseAuthMiddleware";
 
 dotenv.config();
 

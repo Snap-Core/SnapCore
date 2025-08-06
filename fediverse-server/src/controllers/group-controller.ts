@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import {getCommunityFromGroup, getGroupFromCommunity} from '../utils/convert-activity-pub-objects';
 import {requestBackendServer} from "../utils/backend-service";
 import dotenv from 'dotenv';
-import {Community} from "../shared/types/community";
+import {Community} from "../types/community";
 import {getExternalServer} from "../utils/external-federated-service";
 import {WebfingerResponse} from "../types/webfinger-response";
 import {Group} from "../types/group";
