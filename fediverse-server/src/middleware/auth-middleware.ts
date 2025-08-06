@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import {isJwtAuthenticated} from "../../../shared/middleware/auth-middleware";
+import {isJwtAuthenticated} from "../shared/middleware/auth-middleware";
 import dotenv from "dotenv";
 
 dotenv.config();
