@@ -11,5 +11,5 @@ export interface Community {
   created: Date;
   updated: Date
   publicKey: string;
-  encryptedPrivateKey: string;
+  encryptedPrivateKey?: string;
 }

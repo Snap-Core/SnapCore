@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import dotenv from "dotenv";
 import {requestFediverseServer} from "../utils/fediverse-service";
 import {generateKeyPair} from "../utils/key-pair-generation";
@@ -17,7 +17,7 @@ const client : DynamoDBClient = getDynamoClient();
 const dynamoDbTableName : string = process.env.DYNAMODB_TABLE!;
 const usernameIndexName : string = process.env.USERNAME_INDEX_NAME!;
 
-export const createCommunity = async (req: Request, res: Response, next: NextFunction) => {
+export const createCommunity = async (req: Request, res: Response) => {
   let createCommunity: CreateCommunity;
   try {
     createCommunity = req.body;
@@ -56,7 +56,7 @@ export const createCommunity = async (req: Request, res: Response, next: NextFun
   }
 }
 
-export const updateCommunity = async (req: Request, res: Response, next: NextFunction) => {
+export const updateCommunity = async (req: Request, res: Response) => {
   const communityHandle = req.params.communityHandle;
   const updates : Record<string, string> = req.body;
 
