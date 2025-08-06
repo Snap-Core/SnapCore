@@ -43,7 +43,7 @@ export const UserProfile = () => {
         const fetchProfile = async () => {
             setLoading(true);
             try {
-                const data = await fetcher(`/users/by-username/${encodeURIComponent(routeUsername)}`);
+                const data = await fetcher(`/users/${encodeURIComponent(routeUsername)}`);
                 setUserProfile(data.user);
             } catch (error) {
                 console.error("Failed to fetch user profile:", error);
