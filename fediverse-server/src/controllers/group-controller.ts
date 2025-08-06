@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import {getGroupFromCommunity} from '../utils/convert-activity-pub-objects';
 import {requestBackendServer} from "../utils/backend-service";
 import dotenv from 'dotenv';
-import {Community} from "../../../shared/types/community";
+import {Community} from "../shared/types/community";
 
 dotenv.config();
 const frontendServerUrl = new URL(process.env.FRONTEND_SERVER_URL as string);

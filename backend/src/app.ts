@@ -12,9 +12,8 @@ import followRouter from './routes/follow';
 import fedelikeRouter from './routes/federatedLikes';
 import localLikeRouter from './routes/localLikes';
 import userRouter from './routes/user';
-import {User} from "../../shared/types/user";
 import mediaRoutes from './routes/mediaRoutes';
-import {Community} from "../../shared/types/community";
+import {Community} from "./shared/types/community";
 import {generateKeyPair} from "./utils/key-pair-generation";
 import {requireAuth} from "./middleware/authMiddleware";
 
