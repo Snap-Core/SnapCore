@@ -1,10 +1,13 @@
 export interface User {
-  id: string;
+  fediverseId: string;
   username: string;
   displayName: string;
   summary?: string;
   profilePicUrl: string;
-  domain?: string;
+  inbox?: string;
+  outbox?: string;
+  followers?: string;
+  following?: string;
   publicKey: string;
   encryptedPrivateKey?: string;
 }

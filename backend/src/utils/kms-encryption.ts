@@ -5,7 +5,7 @@ dotenv.config();
 
 const KMS_ALIAS = process.env.KMS_ALIAS!;
 
-const kmsClient = new KMSClient({ region: 'af-south-1' });
+const kmsClient = new KMSClient({ region: process.env.AWS_REGION });
 
 export const encryptPrivateKey = async (privateKeyPem: string): Promise<string> => {
   const result = await kmsClient.send(new EncryptCommand({

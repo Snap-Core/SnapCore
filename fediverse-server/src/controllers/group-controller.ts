@@ -44,6 +44,6 @@ export const getGroupByHandle = async (req: Request, res: Response) => {
   return res.redirect(`${frontendServerUrl}community/${handle}`); // todo: confirm structure of url
 };
 
-export const getExternalPersonFromUsername = async (req: Request, res: Response) => {
+export const getExternalCommunityFromUsername = async (req: Request, res: Response) => {
   // todo
 };

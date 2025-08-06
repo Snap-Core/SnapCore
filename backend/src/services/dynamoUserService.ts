@@ -60,9 +60,9 @@ export async function createUserIfNotExists(user: GoogleUserInfo) {
 export async function findUserByUsername(username: string) {
   const cmd = new ScanCommand({
     TableName: tableName,
-    FilterExpression: "#un = :username",
-    ExpressionAttributeNames: { "#un": "username" },
-    ExpressionAttributeValues: { ":username": username },
+    FilterExpression: "#un = :username_lowercase",
+    ExpressionAttributeNames: { "#un": "username_lowercase" },
+    ExpressionAttributeValues: { ":username_lowercase": username.toLowerCase() },
   });
   const result = await getDynamoClient().send(cmd);
   return result.Items && result.Items.length > 0 ? result.Items[0] : null;
@@ -114,6 +114,10 @@ export async function updateUser(
     exprAttrNames["#un"] = "username";
     exprAttrValues[":username"] = updates.username;
     hasUsername = true;
+
+    updateExpr.push("#un = :username_lowercase");
+    exprAttrNames["#un"] = "username_lowercase";
+    exprAttrValues[":username_lowercase"] = updates.username.toLowerCase();
   }
   if (updates.summary) {
     updateExpr.push("#sm = :summary");

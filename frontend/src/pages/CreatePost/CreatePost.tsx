@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import "./CreatePost.css";
-// import { useAuth } from "../../auth/useAuth";
+import { useAuth } from "../../auth/useAuth";
 import { createPost } from "../../services/postService";
 import { useNavigate } from "react-router-dom";
 
@@ -16,7 +16,7 @@ export const CreatePost = () => {
   const [media, setMedia] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  // const { user: currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const navigate = useNavigate();
 
 
@@ -52,16 +52,15 @@ export const CreatePost = () => {
 
     setError(null);
 
-    // if (!currentUser || !currentUser.username) {
-    //   setError("You must be logged in to post.");
-    //   return;
-    // }
+    if (!currentUser || !currentUser.username) {
+      setError("You must be logged in to make a post.");
+      return;
+    }
 
     try {
       const newPost = await createPost({
         content: text,
-        actor: "Test user",
-        // actor: currentUser.username,
+        actor: currentUser.username,
         media: media,
       });
       console.log("Post created:", newPost);
