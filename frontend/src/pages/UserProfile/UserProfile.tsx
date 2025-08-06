@@ -18,6 +18,7 @@ export const UserProfile = () => {
     const [userProfile, setUserProfile] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
+    const [showUserSetup, setShowUserSetup] = useState(false);
     const { followedUsers, followers, toggleFollow } = useFollow();
     const isFollowing = !!userProfile?.username && followedUsers.has(userProfile.username);
     const followerCount = followers.size;
@@ -30,20 +31,29 @@ export const UserProfile = () => {
     const isOwnProfile = routeUsername === currentUser?.username;
 
     useEffect(() => {
+        if (currentUser && (!currentUser.username || !currentUser.activated)) {
+            setShowUserSetup(true);
+            setUserProfile(currentUser);
+            setLoading(false);
+            return;
+        }
+
         if (!routeUsername && currentUser?.username) {
             navigate(`/profile/${currentUser.username}`, { replace: true });
             return;
         }
+
+        setLoading(false);
     }, [routeUsername, currentUser, navigate]);
 
     useEffect(() => {
-        if (!routeUsername) return;
+        if (!routeUsername || !currentUser?.activated) return;
 
         const fetchProfile = async () => {
             setLoading(true);
             try {
-                const data = await fetcher(`/users/by-username/${encodeURIComponent(routeUsername)}`);
-                setUserProfile(data.user);
+                const data = await fetcher(`/users/${encodeURIComponent(routeUsername)}`);
+                setUserProfile(data);
             } catch (error) {
                 console.error("Failed to fetch user profile:", error);
                 setUserProfile(null);
@@ -53,7 +63,7 @@ export const UserProfile = () => {
         };
 
         fetchProfile();
-    }, [routeUsername]);
+    }, [routeUsername, currentUser?.activated]);
 
     const fetchProfileFollowCounts = async () => {
         if (!userProfile || isOwnProfile) return;
@@ -75,14 +85,11 @@ export const UserProfile = () => {
         fetchProfileFollowCounts();
     }, [userProfile, isOwnProfile]);
 
-
     const handleFollowToggle = async () => {
         if (!userProfile?.username) return;
         await toggleFollow(userProfile.username);
         await fetchProfileFollowCounts();
     };
-
-
 
     const handleProfilePicChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -100,8 +107,46 @@ export const UserProfile = () => {
         }
     };
 
+    const handleProfileComplete = async (fields: { username: string; displayName: string; summary: string }) => {
+        
+        try {
+            setUserProfile(prev => prev ? { ...prev, ...fields, activated: true } : null);
+            setShowUserSetup(false);
+            
+            navigate(`/profile/${fields.username}`, { replace: true });
+            
+            showToast("Profile completed successfully!", "success");
+        } catch (error) {
+            console.error("Error handling profile completion:", error);
+            showToast("Error completing profile", "error");
+        }
+    };
 
-    if (!routeUsername) {
+    const handleProfileSetupClose = () => {
+        navigate('/', { replace: true });
+    };
+
+    if (showUserSetup && userProfile) {
+        return (
+            <div className="user-profile-container">
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '60vh',
+                    padding: '2rem'
+                }}>
+                    <UserInfoInput
+                        userId={userProfile.id}
+                        onClose={handleProfileSetupClose}
+                        onSubmit={handleProfileComplete}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    if (!routeUsername && !showUserSetup) {
         return <div className="user-profile-container">Loading...</div>;
     }
 
@@ -111,18 +156,6 @@ export const UserProfile = () => {
 
     if (!userProfile) {
         return <div className="user-profile-container">User not found</div>;
-    }
-
-    if (isOwnProfile && !userProfile.activated) {
-        return (
-            <UserInfoInput
-                userId={userProfile.id}
-                onClose={() => { }}
-                onSubmit={fields => {
-                    setUserProfile({ ...userProfile, ...fields, activated: true });
-                }}
-            />
-        );
     }
 
     return (
@@ -162,8 +195,6 @@ export const UserProfile = () => {
                                 </>
                             )}
                         </div>
-
-
                     </div>
                     {!isOwnProfile && (
                         <button className="follow-button" onClick={handleFollowToggle}>

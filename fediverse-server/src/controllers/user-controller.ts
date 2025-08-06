@@ -44,7 +44,7 @@ export const getPersonFromUsername = async (req: Request, res: Response) => {
     return res.status(200).json(actor);
   }
 
-  return res.redirect(`${frontendServerUrl}profile/${username}`); // todo: confirm structure of url
+  return res.redirect(`${frontendServerUrl}profile/${username}`); 
 };
 
 export const getExternalUserFromUsername = async (req: Request, res: Response) => {
@@ -88,4 +88,45 @@ export const getExternalUserFromUsername = async (req: Request, res: Response) =
 
   res.setHeader('Content-Type', 'application/activity+json');
   res.status(200).json(user);
+};
+
+export const searchExternalUsers = async (req: Request, res: Response) => {
+  const { query, domains } = req.body as { query: string; domains: string[] };
+
+  if (!query || !domains || domains.length === 0) {
+    return res.status(400).json({ error: 'Query and domains required' });
+  }
+
+  const results = [];
+
+  for (const domain of domains) {
+    try {
+      const webfingerResponse = await getExternalServer(
+        new URL(`https://${domain}`), 
+        `.well-known/webfinger?resource=acct:${query}@${domain}`
+      );
+
+      if (webfingerResponse.ok) {
+        const webfingerData: WebfingerResponse = await webfingerResponse.json();
+        const personUrl = webfingerData.links.find(link => link.rel === 'self')?.href;
+
+        if (personUrl) {
+          const actorResponse = await getExternalServer(new URL(personUrl), '');
+          if (actorResponse.ok) {
+            const actorData = await actorResponse.json();
+            results.push({
+              username: query,
+              domain,
+              actor: actorData,
+              source: 'webfinger'
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.log(`Failed to search ${domain} for ${query}:`, error);
+    }
+  }
+
+  res.json({ results, query, searchedDomains: domains });
 };
