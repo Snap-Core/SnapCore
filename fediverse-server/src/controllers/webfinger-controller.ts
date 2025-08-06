@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import {User} from "../../../shared/types/user";
 import {requestBackendServer} from "../utils/backend-service";
 import dotenv from 'dotenv';
+import { Community } from '../../../shared/types/community';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ export const handleWebFinger = async (req: Request, res: Response) => {
   }
 
   let user : User;
+  let community : Community;
 
   try {
     user = await requestBackendServer(
@@ -42,15 +44,34 @@ export const handleWebFinger = async (req: Request, res: Response) => {
     return res.status(500).json('Could not retrieve user from backend server\n' +  error);
   }
 
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
+  try {
+    community = await requestBackendServer(
+      `community/${username}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/activity+json',
+        },
+      });
+  } catch (error) {
+    return res.status(500).json('Could not retrieve community from backend server\n' +  error);
   }
 
-  const actorUrl = `${fediverseServerUrl}users/${user.username}`;
+  if (!user && !community) {
+    return res.status(404).json({ error: 'No User or Community found by that username' });
+  }
+
+  const isUser = !!user
+
+  const actorUrl = `${fediverseServerUrl}${
+    isUser ? 'users' : 'community'
+  }/${
+    isUser ? user.username : community.handle
+  }`;
 
   res.setHeader('Content-Type', 'application/jrd+json');
   res.json({
-    subject: `acct:${user.username}@${fediverseDomain}`,
+    subject: `acct:${isUser ? user.username : community.handle}@${fediverseDomain}`,
     links: [
       {
         rel: 'self',

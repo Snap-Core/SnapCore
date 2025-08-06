@@ -4,23 +4,11 @@ import { GoogleUserInfo } from "../types/AuthTypes";
 import dotenv from 'dotenv';
 import {generateKeyPair} from "../utils/key-pair-generation";
 import Fuse from 'fuse.js';
+import {getDynamoClient} from "../middleware/dynamoDbClient";
 
 dotenv.config();
 
-let client: DynamoDBClient | null = null;
-function getDynamoClient() {
-  if (!client) {
-    client = new DynamoDBClient({
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-        sessionToken: process.env.AWS_SESSION_TOKEN || "",
-      },
-      region: process.env.AWS_REGION || "af-south-1"
-    });
-  }
-  return client;
-}
+let client: DynamoDBClient | null = getDynamoClient();
 
 const tableName = process.env.DYNAMODB_TABLE || "accounts";
 

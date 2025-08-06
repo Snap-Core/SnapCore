@@ -51,7 +51,7 @@ export function getGroupFromCommunity(community: Community): Group {
     icon: {
       type: "Image",
       mediaType: "image/jpeg",
-      url: community.communityPicUrl
+      url: community.communityPicUrl || ''
     },
     publicKey: {
       id: `${community.fediverseId}#main-key`,
@@ -75,5 +75,22 @@ export function getUserFromPerson(person: Person): User {
     following: person.following,
     profilePicUrl: person.icon?.url || '',
     publicKey: person.publicKey.publicKeyPem
+  };
+}
+
+export function getCommunityFromGroup(group: Group): Community {
+  return {
+    fediverseId: group.id,
+    handle: group.preferredUsername || '',
+    displayName: group.name || '',
+    summary: group.summary || '',
+    inbox: group.inbox,
+    outbox: group.outbox,
+    followers: group.followers,
+    following: group.following,
+    communityPicUrl: group.icon?.url || '',
+    publicKey: group.publicKey.publicKeyPem,
+    created: group.published,
+    updated: group.updated
   };
 }
