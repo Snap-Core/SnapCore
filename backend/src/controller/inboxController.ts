@@ -1,14 +1,82 @@
 import { Request, Response } from 'express';
+import fetch from 'node-fetch';
+import { v4 as uuidv4 } from 'uuid';
 import Post from '../types/post';
 import Like from '../types/likes';
 import Follow from '../types/follow';
 
+const extractActorId = (actorField: string | { [key: string]: any }): string => {
+  if (typeof actorField === 'string') return actorField;
+  if (actorField?.id) return actorField.id;
+  if (actorField?.name) return actorField.name;
+  throw new Error('Invalid actor format: cannot extract ID');
+};
+
+const sendAcceptFollow = async (
+  actorField: string | object,
+  object: string,
+  followActivityId: string
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const actorId = extractActorId(actorField);
+
+    const actorRes = await fetch(actorId, {
+      headers: { Accept: 'application/activity+json' }
+    });
+
+    if (!actorRes.ok) {
+      return { success: false, error: `Failed to fetch actor: ${actorRes.statusText}` };
+    }
+
+    const actorData = await actorRes.json() as { inbox: string };
+    const inboxUrl = actorData.inbox;
+
+    if (!inboxUrl) {
+      return { success: false, error: 'Follower actor has no inbox' };
+    }
+
+    const acceptActivity = {
+      '@context': 'https://www.w3.org/ns/activitystreams',
+      id: `https://yourdomain.example/activities/${uuidv4()}`,
+      type: 'Accept',
+      actor: object,
+      object: {
+        id: followActivityId,
+        type: 'Follow',
+        actor: actorId,
+        object
+      }
+    };
+
+    const res = await fetch(inboxUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/activity+json' },
+      body: JSON.stringify(acceptActivity)
+    });
+
+    if (!res.ok) {
+      return { success: false, error: `Failed to send Accept: ${res.statusText}` };
+    }
+
+    return { success: true };
+
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+};
+
 export const handleInboxPost = async (req: Request, res: Response) => {
   try {
     const activity = req.body;
-
     if (!activity.type || !activity.actor || !activity.object) {
       return res.status(400).json({ message: 'Invalid ActivityPub object' });
+    }
+
+    let actor: string;
+    try {
+      actor = extractActorId(activity.actor);
+    } catch (err) {
+      return res.status(400).json({ message: 'Invalid actor format' });
     }
 
     if (activity.type === 'Create' && activity.object?.type === 'Note') {
@@ -21,7 +89,7 @@ export const handleInboxPost = async (req: Request, res: Response) => {
 
       const post = new Post({
         content,
-        actor: attributedTo,
+        actor,
         mediaUrl,
         mediaType,
         activityPubObject: activity,
@@ -32,61 +100,63 @@ export const handleInboxPost = async (req: Request, res: Response) => {
       await post.save();
       return res.status(202).json({ message: 'Create activity received and post saved' });
     }
-    
 
     if (activity.type === 'Like') {
-      const objectId = activity.object.split('#')[0];
+      const objectField = activity.object;
 
-      const existingPost = await Post.findOne({ 'activityPubObject.id': objectId });
+      const objectId =
+        typeof objectField === 'string'
+          ? objectField
+          : objectField?.id;
+
+      if (!objectId) {
+        return res.status(400).json({ message: 'Like activity missing object ID' });
+      }
+
+      const existingPost = await Post.findOne({ 'activityPubObject.object.id': objectId });
       if (!existingPost) {
         return res.status(404).json({ message: 'Cannot like non-existent post' });
       }
 
-      const alreadyLiked = await Like.findOne({ actor: activity.actor, object: objectId });
+      const alreadyLiked = await Like.findOne({ actor, object: objectId });
       if (alreadyLiked) {
         return res.status(409).json({ message: 'Actor has already liked this post' });
       }
+
       const like = new Like({
-        actor: activity.actor,
+        actor,
         object: objectId,
         activityPubObject: activity
       });
 
-        await like.save();
-        return res.status(202).json({ message: 'Like received and recorded' });
+      await like.save();
+      return res.status(202).json({ message: 'Like received and recorded' });
     }
 
     if (activity.type === 'Undo' && activity.object?.type === 'Like') {
-     const actor = activity.actor;
-     const objectUrl = activity.object.object?.split('#')[0]; 
+      const objectUrl = activity.object.object?.id || activity.object.object;
 
-     if (!actor || !objectUrl) {
-      return res.status(400).json({ message: 'Invalid Undo Like format' });
-     }
-     
-      const postExists = await Post.exists({ 'activityPubObject.id': objectUrl });
+      if (!objectUrl) {
+        return res.status(400).json({ message: 'Invalid Undo Like format' });
+      }
+
+      const postExists = await Post.exists({ 'activityPubObject.object.id': objectUrl });
       if (!postExists) {
-       return res.status(404).json({ message: 'Post does not exist' });
-     }
-     try {
-    const result = await Like.findOneAndDelete({ actor, object: objectUrl });
+        return res.status(404).json({ message: 'Post does not exist' });
+      }
 
-    if (result) {
-      return res.status(202).json({ message: 'Like undone successfully' });
-    } else {
-      return res.status(410).json({ message: 'Like was already deleted or never existed' });
+      const result = await Like.findOneAndDelete({ actor, object: objectUrl });
+      if (result) {
+        return res.status(202).json({ message: 'Like undone successfully' });
+      } else {
+        return res.status(410).json({ message: 'Like was already deleted or never existed' });
+      }
     }
-  } catch (err) {
-    console.error('Error during Undo Like:', err);
-    return res.status(500).json({ message: 'Error during Undo Like' });
-  }
-}
 
     if (activity.type === 'Follow') {
-      const { actor, object } = activity;
-
-      if (!actor || !object) {
-        return res.status(400).json({ message: 'Missing actor or object in Follow activity' });
+      const object = activity.object;
+      if (!object) {
+        return res.status(400).json({ message: 'Missing object in Follow activity' });
       }
 
       const alreadyFollowing = await Follow.findOne({ actor, object });
@@ -101,14 +171,18 @@ export const handleInboxPost = async (req: Request, res: Response) => {
       });
 
       await follow.save();
-      return res.status(202).json({ message: 'Follow recorded successfully' });
+
+      const acceptResult = await sendAcceptFollow(activity.actor, object, activity.id);
+      if (!acceptResult.success) {
+        return res.status(500).json({ message: `Failed to send Accept: ${acceptResult.error}` });
+      }
+
+      return res.status(202).json({ message: 'Follow recorded and Accept sent' });
     }
 
     if (activity.type === 'Undo' && activity.object?.type === 'Follow') {
-      const actor = activity.actor;
       const object = activity.object.object;
-
-      if (!actor || !object) {
+      if (!object) {
         return res.status(400).json({ message: 'Invalid Undo Follow format' });
       }
 
@@ -122,9 +196,7 @@ export const handleInboxPost = async (req: Request, res: Response) => {
 
     return res.status(400).json({ message: 'Unsupported activity type' });
 
-
   } catch (err) {
-    console.error('Inbox error:', err);
-    return res.status(500).json({ message: 'Error processing inbox activity' });
+    return res.status(500).json({ message: 'Error processing inbox activity', error: String(err) });
   }
 };
