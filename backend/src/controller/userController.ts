@@ -3,6 +3,7 @@ import { findUserById, updateUser, scanUsers, findUserByUsername, searchUsersByQ
 import {User} from "../../../shared/types/user";
 import dotenv from "dotenv";
 import {requestFediverseServer} from "../utils/fediverse-service";
+import {searchFederatedUsers} from "../services/federatedSearchService";
 
 dotenv.config();
 
@@ -104,15 +105,40 @@ export const getExternalUserFromUsername = async (req: Request, res: Response) =
 
 export const searchUsers = async (req: Request, res: Response) => {
   try {
-    const { q: query, limit = 20 } = req.query;
+    const { q: query, limit = 20, includeFederated = 'true' } = req.query;
     
     if (!query || typeof query !== 'string') {
       return res.status(400).json({ error: "Search query required" });
     }
 
-    const users = await searchUsersByQuery(query, Number(limit));
-    res.json({ users, query });
+    if (query.trim().length < 2) {
+      return res.json({ 
+        users: [], 
+        federatedUsers: [],
+        query, 
+        message: "Query too short"
+      });
+    }
+
+    const localUsers = await searchUsersByQuery(query.trim(), Number(limit));
+    
+    let federatedUsers: User[] = [];
+    if (includeFederated === 'true') {
+      federatedUsers = await searchFederatedUsers(query.trim());
+    }
+
+    res.json({ 
+      users: localUsers,
+      federatedUsers,
+      query,
+      localCount: localUsers.length,
+      federatedCount: federatedUsers.length,
+      message: (localUsers.length === 0 && federatedUsers.length === 0) 
+        ? "No users found" 
+        : undefined
+    });
   } catch (err) {
+    console.error("Search error:", err);
     res.status(500).json({ error: "Search failed" });
   }
 };

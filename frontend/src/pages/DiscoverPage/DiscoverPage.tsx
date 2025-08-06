@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetcher } from "../../utils/fetcher";
 import "./DiscoverPage.css";
-import type { User } from "../../types/User";
+import type { FederatedUser, User } from "../../types/User";
 import type { Post } from "../../types/Post";
 
 export const DiscoverPage = () => {
@@ -11,16 +11,22 @@ export const DiscoverPage = () => {
   const [searchType, setSearchType] = useState<"users" | "posts">("users");
   const [users, setUsers] = useState<User[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [federatedUsers, setFederatedUsers] = useState<FederatedUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+
+  const filterActivatedUsers = (users: User[]) => {
+    return users.filter(user => user.activated === true);
+  };
 
   useEffect(() => {
     const loadInitialUsers = async () => {
       setInitialLoading(true);
       try {
         const data = await fetcher("/users");
-        setUsers(data.users.slice(0, 50)); 
+        const activatedUsers = filterActivatedUsers(data.users || []);
+        setUsers(activatedUsers.slice(0, 50)); 
       } catch (error) {
         console.error("Failed to load initial users:", error);
       } finally {
@@ -35,8 +41,10 @@ export const DiscoverPage = () => {
     if (!searchTerm.trim()) {
       try {
         const data = await fetcher("/users");
-        setUsers(data.users.slice(0, 50));
+        const activatedUsers = filterActivatedUsers(data.users || []);
+        setUsers(activatedUsers.slice(0, 50));
         setPosts([]);
+        setFederatedUsers([]);
         setHasSearched(false);
       } catch (error) {
         console.error("Failed to reload users:", error);
@@ -47,13 +55,16 @@ export const DiscoverPage = () => {
     setLoading(true);
     try {
       if (searchType === "users") {
-        const data = await fetcher(`/users/search?q=${encodeURIComponent(searchTerm)}&limit=20`);
-        setUsers(data.users);
+        const data = await fetcher(`/users/search?q=${encodeURIComponent(searchTerm)}&limit=20&includeFederated=true`);
+        const activatedUsers = filterActivatedUsers(data.users || []);
+        setUsers(activatedUsers);
+        setFederatedUsers(data.federatedUsers || []);
         setPosts([]);
       } else {
         const data = await fetcher(`/posts/search?q=${encodeURIComponent(searchTerm)}&limit=20`);
-        setPosts(data.posts);
+        setPosts(data.posts || []);
         setUsers([]);
+        setFederatedUsers([]);
       }
       setHasSearched(true);
     } catch (error) {
@@ -69,6 +80,7 @@ export const DiscoverPage = () => {
       setPosts([]);
     } else if (type === "posts" && !hasSearched) {
       setUsers([]);
+      setFederatedUsers([]);
     }
   };
 
@@ -80,11 +92,14 @@ export const DiscoverPage = () => {
     try {
       if (searchType === "users") {
         const data = await fetcher("/users");
-        setUsers(data.users.slice(0, 50));
+        const activatedUsers = filterActivatedUsers(data.users || []);
+        setUsers(activatedUsers.slice(0, 50));
         setPosts([]);
+        setFederatedUsers([]);
       } else {
         setUsers([]);
         setPosts([]);
+        setFederatedUsers([]);
       }
     } catch (error) {
       console.error("Failed to reload data:", error);
@@ -168,15 +183,15 @@ export const DiscoverPage = () => {
                 <div className="discover-users-section">
                   <h3 className="discover-results-title">
                     {hasSearched 
-                      ? `Search Results (${users.length})` 
-                      : `All Users (${users.length})`
+                      ? `Local Users (${users.length})` 
+                      : `All Local Users (${users.length})`
                     }
                   </h3>
                   {users.length === 0 ? (
                     <p className="discover-no-results">
                       {hasSearched 
-                        ? `No users found matching "${searchTerm}"` 
-                        : "No users available"
+                        ? "No activated users found matching your search" 
+                        : "No activated users found"
                       }
                     </p>
                   ) : (
@@ -189,21 +204,57 @@ export const DiscoverPage = () => {
                         >
                           <img
                             src={user.profilePic || "/src/assets/generic-profile-p.jpg"}
-                            alt={user.displayName}
+                            alt={user.displayName || user.username}
                             className="discover-user-avatar"
                           />
                           <div className="discover-user-details">
-                            <h4 className="discover-user-name">{user.displayName || user.displayName}</h4>
+                            <h4 className="discover-user-name">{user.displayName || user.username}</h4>
                             <p className="discover-user-username">@{user.username}</p>
                             <p className="discover-user-bio">{user.summary}</p>
                             <div className="discover-user-stats">
                               <span className="discover-user-stat">{user.followers || 0} followers</span>
                               <span className="discover-user-stat">{user.following || 0} following</span>
                             </div>
+                            {}
+                            {user.activated && (
+                              <div className="discover-user-activation-status">
+                                ✅ Activated
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
+                  )}
+
+                  {hasSearched && federatedUsers.length > 0 && (
+                    <>
+                      <h3 className="discover-results-title discover-federated-title">
+                        Federated Users ({federatedUsers.length})
+                      </h3>
+                      <div className="discover-users-grid">
+                        {federatedUsers.map((user, index) => (
+                          <div 
+                            key={user.username && user.domain ? `${user.username}@${user.domain}` : index} 
+                            className="discover-user-card discover-federated-card"
+                          >
+                            <img
+                              src={user.profilePic || "/src/assets/generic-profile-p.jpg"}
+                              alt={user.displayName || user.username}
+                              className="discover-user-avatar"
+                            />
+                            <div className="discover-user-details">
+                              <h4 className="discover-user-name">{user.displayName || user.username}</h4>
+                              <p className="discover-user-username">@{user.username}@{user.domain}</p>
+                              <p className="discover-user-bio">{user.summary}</p>
+                              <div className="discover-federated-badge">
+                                <span>🌐 Federated User</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -225,11 +276,11 @@ export const DiscoverPage = () => {
                           <div className="discover-post-header">
                             <img
                               src={post.user?.profilePic || "/src/assets/generic-profile-p.jpg"}
-                              alt={post.user?.displayName}
+                              alt={post.user?.displayName || post.user?.username}
                               className="discover-post-avatar"
                             />
                             <div>
-                              <h4 className="discover-post-author">{post.user?.displayName}</h4>
+                              <h4 className="discover-post-author">{post.user?.displayName || post.user?.username}</h4>
                               <p className="discover-post-username">@{post.user?.username}</p>
                             </div>
                           </div>

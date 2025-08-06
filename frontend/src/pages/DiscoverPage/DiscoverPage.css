@@ -318,7 +318,39 @@
   border: 1px solid #e5e5e5;
 }
 
-/* Mobile Responsive */
+.discover-federated-title {
+  margin-top: 2rem;
+  color: #667eea;
+  border-top: 1px solid #e5e5e5;
+  padding-top: 1rem;
+}
+
+.discover-federated-card {
+  border-color: #b9f5cc;
+  background: linear-gradient(135deg, #f8fdfa 0%, #f3fef6 100%);
+}
+
+.discover-federated-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+}
+
+.discover-federated-badge {
+  background: #667eea;
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.discover-federated-badge span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 @media (max-width: 768px) {
   .discover-page {
     padding: 1rem 0;
