@@ -4,13 +4,14 @@ import "./Feed.css";
 import type { Post } from "../../types/Post";
 import { formatRelativeTime } from "../../utils/timeUtils";
 import genericProfilePic from "../../assets/generic-profile-p.jpg";
-import { getAllPosts } from "../../services/postService";
+import { getAllPosts, getPostsByActor } from "../../services/postService";
 import { useAuth } from "../../auth/useAuth";
 import { v4 as uuidv4 } from "uuid";
 import { likePost, unlikePost } from "../../services/likeService";
 import { useFollow } from "../../components/FollowContext";
 import { useToast } from "../../components/ToastContext";
 import { useNavigate } from "react-router-dom";
+import DOMPurify from "dompurify";
 
 type FeedProps = {
   username?: string;
@@ -34,21 +35,30 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
     setLoading(true);
     setError(false);
 
-    getAllPosts(currentUser?.username || "")
-      .then((fetchedPosts) => {
-        const filteredPosts = username
-          ? fetchedPosts.filter((post) => post.user?.username === username)
-          : fetchedPosts;
-        setPosts(filteredPosts);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch posts", err);
-
-        setError(true);
-      }).finally(() => {
-        setLoading(false);
-      });;
+    if (username) {
+      getPostsByActor(username)
+        .then((fetchedPosts) => {
+          setPosts(fetchedPosts);
+          setLoading(false);
+        })
+        .catch((err) => {
+          setLoading(false);
+          setError(true);
+        });
+    } else {
+      getAllPosts(username || currentUser?.username || "")
+        .then((fetchedPosts) => {
+          const filteredPosts = username
+            ? fetchedPosts.filter((post) => post.user?.username === username)
+            : fetchedPosts;
+          setPosts(filteredPosts);
+          setLoading(false);
+        })
+        .catch((err) => {
+          setLoading(false);
+          setError(true);
+        });
+    }
   }, [currentUser?.username, reloadKey]);
 
   useEffect(() => {
@@ -196,7 +206,14 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
             </div>
           </div>
 
-        {post.text && <div className="feed-post-text">{post.text}</div>}
+          {post.text && (
+            <div
+              className="feed-post-text"
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(post.text),
+              }}
+            />
+          )}
 
           {post.media && post.media?.length > 0 && (
             <div className="feed-post-media">

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import * as PostRepo from '../models/post';
 import path from 'path';
 import { getUploadedFileUrl } from '../utils/getFileUrl';
+import { fetchExternalUser, fetchExternalUserOutbox, searchFederatedUsers } from '../services/federatedSearchService';
 
 const generateActivityPubNote = (
   actor: string,
@@ -77,9 +78,55 @@ export const getAllPosts = async (_req: Request, res: Response) => {
   }
 };
 
+const getActorDetails = (actorUrl: string): { username: string, domain: string, isFederated: boolean } => {
+  if (actorUrl.includes("@")) {
+    let username = actorUrl.substring(0, actorUrl.lastIndexOf("@"));
+    const domain = actorUrl.substring(actorUrl.lastIndexOf("@") + 1);
+    if (username.startsWith("@")) {
+      username = username.substring(1);
+    }
+    const ourDomain = "snapcore.subspace.su";
+    return { username, domain, isFederated: (!!domain && domain != ourDomain) };
+  } else {
+    return { username: actorUrl, domain: "", isFederated: false }
+  }
+}
+
 export const getPostsByActor = async (req: Request, res: Response) => {
   try {
     const actorUrl = decodeURIComponent(req.params.actorUrl);
+
+    const { username, domain, isFederated } = getActorDetails(actorUrl);
+
+    console.log({ username, domain, isFederated });
+
+    if (isFederated) {
+      const user = await fetchExternalUser(username, domain);
+      const outbox = await fetchExternalUserOutbox(user?.outbox || "");
+      const posts: any[] = [];
+
+      console.log(outbox.items.length);
+
+      for (const item of outbox.items) {
+        posts.push({
+          _id: -1,
+          content: item.object.content,
+          actor: item.actor,
+          activityPubObject: item.object,
+          createdAt: item.object.published,
+          __v: -1
+        }
+        );
+      }
+
+      if (!posts.length) {
+        return res.status(404).json({ message: 'No posts found for this actor' });
+      } else {
+        res.json(posts);
+        return;
+      }
+    }
+
     const posts = await PostRepo.getPostsByActor(actorUrl);
 
     if (!posts.length) {
@@ -91,3 +138,4 @@ export const getPostsByActor = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error Could not fetch posts by actor' });
   }
 };
+
