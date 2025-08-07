@@ -1,7 +1,7 @@
-import { User } from "../../../shared/types/user";
 import { Person } from "../types/person";
 import {Community} from "../../../shared/types/community";
 import {Group} from "../types/group";
+import { User } from "../types/user";
 
 export function getPersonFromUser(user: User): Person {
   return {

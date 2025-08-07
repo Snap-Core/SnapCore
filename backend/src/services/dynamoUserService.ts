@@ -177,7 +177,6 @@ export async function searchUsersByQuery(query: string, limit: number = 20) {
     keys: [
       { name: 'username', weight: 0.6 },
       { name: 'displayName', weight: 0.4 },
-      { name: 'summary', weight: 0.2 }
     ],
     threshold: 0.4, 
     distance: 100, 

@@ -20,6 +20,13 @@ export const DiscoverPage = () => {
     return users.filter(user => user.activated === true);
   };
 
+  const formatFollowCount = (count: number | undefined) => {
+    if (count === undefined || count === null) return "0";
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
+
   useEffect(() => {
     const loadInitialUsers = async () => {
       setInitialLoading(true);
@@ -74,16 +81,6 @@ export const DiscoverPage = () => {
     }
   };
 
-  const handleSearchTypeChange = (type: "users" | "posts") => {
-    setSearchType(type);
-    if (type === "users" && !hasSearched) {
-      setPosts([]);
-    } else if (type === "posts" && !hasSearched) {
-      setUsers([]);
-      setFederatedUsers([]);
-    }
-  };
-
   const clearSearch = async () => {
     setSearchTerm("");
     setHasSearched(false);
@@ -108,8 +105,22 @@ export const DiscoverPage = () => {
     }
   };
 
+  const handleSearchTypeChange = (type: "users" | "posts") => {
+    setSearchType(type);
+    if (type === "users" && !hasSearched) {
+      setPosts([]);
+    } else if (type === "posts" && !hasSearched) {
+      setUsers([]);
+      setFederatedUsers([]);
+    }
+  };
+
   const handleUserClick = (username: string) => {
     navigate(`/profile/${username}`);
+  };
+
+  const handleFederatedUserClick = (user: FederatedUser) => {
+    navigate(`/profile/${user.username}@${user.domain}`);
   };
 
   if (initialLoading) {
@@ -212,10 +223,9 @@ export const DiscoverPage = () => {
                             <p className="discover-user-username">@{user.username}</p>
                             <p className="discover-user-bio">{user.summary}</p>
                             <div className="discover-user-stats">
-                              <span className="discover-user-stat">{user.followers || 0} followers</span>
-                              <span className="discover-user-stat">{user.following || 0} following</span>
+                              <span className="discover-user-stat">{formatFollowCount(user.followersCount || 0)} followers</span>
+                              <span className="discover-user-stat">{formatFollowCount(user.followingCount || 0)} following</span>
                             </div>
-                            {}
                             {user.activated && (
                               <div className="discover-user-activation-status">
                                 ✅ Activated
@@ -237,16 +247,28 @@ export const DiscoverPage = () => {
                           <div 
                             key={user.username && user.domain ? `${user.username}@${user.domain}` : index} 
                             className="discover-user-card discover-federated-card"
+                            onClick={() => handleFederatedUserClick(user)}
                           >
                             <img
-                              src={user.profilePic || "/src/assets/generic-profile-p.jpg"}
+                              src={user.profilePicUrl || user.profilePic || "/src/assets/generic-profile-p.jpg"}
                               alt={user.displayName || user.username}
                               className="discover-user-avatar"
                             />
                             <div className="discover-user-details">
                               <h4 className="discover-user-name">{user.displayName || user.username}</h4>
                               <p className="discover-user-username">@{user.username}@{user.domain}</p>
-                              <p className="discover-user-bio">{user.summary}</p>
+                              <p className="discover-user-bio" dangerouslySetInnerHTML={{ __html: user.summary || '' }}></p>
+                              
+                              {/* Add follow counts for federated users */}
+                              <div className="discover-user-stats">
+                                <span className="discover-user-stat">
+                                  {formatFollowCount(user.followersCount)} followers
+                                </span>
+                                <span className="discover-user-stat">
+                                  {formatFollowCount(user.followingCount)} following
+                                </span>
+                              </div>
+                              
                               <div className="discover-federated-badge">
                                 <span>🌐 Federated User</span>
                               </div>
