@@ -42,7 +42,7 @@ export async function createUserIfNotExists(user: GoogleUserInfo) {
   });
 
   await getDynamoClient().send(cmd);
-  return { id: user.sub, name: user.name, email: user.email, isExisting: false };
+  return { id: user.sub, name: user.name, email: user.email, isExisting: false, profilePic: undefined };
 }
 
 export async function findUserByUsername(username: string) {
@@ -61,7 +61,7 @@ export async function findUserByUsername(username: string) {
 
 export async function updateUser(
   id: string,
-  updates: Partial<{ displayName: string; username: string; summary: string; activated: boolean }>
+  updates: Partial<{ displayName: string; username: string; summary: string; activated: boolean, profilePic: string; }>
 ) {
   if (
     updates.username &&
@@ -120,6 +120,12 @@ export async function updateUser(
     activated = hasDisplayName && hasUsername && hasSummary;
   }
 
+  if (updates.profilePic) {
+  updateExpr.push("#pp = :profilePic");
+  exprAttrNames["#pp"] = "profilePic";
+  exprAttrValues[":profilePic"] = updates.profilePic;
+}
+
   updateExpr.push("#act = :activated");
   exprAttrNames["#act"] = "activated";
   exprAttrValues[":activated"] = activated;
@@ -165,7 +171,6 @@ export async function searchUsersByQuery(query: string, limit: number = 20) {
     keys: [
       { name: 'username', weight: 0.6 },
       { name: 'displayName', weight: 0.4 },
-      { name: 'summary', weight: 0.2 }
     ],
     threshold: 0.4, 
     distance: 100, 

@@ -32,7 +32,7 @@ export const updateUserController = async (req: Request, res: Response, next: Ne
     const id = req.user?.googleId;
     const updates = req.body;
 
-    if (!id || (!updates.name && !updates.email && !updates.displayName && !updates.username && !updates.summary && typeof updates.activated !== "boolean")) {
+    if (!id || (!updates.name && !updates.email && !updates.displayName && !updates.username && !updates.summary && !updates.profilePic && typeof updates.activated !== "boolean")) {
       return res.status(400).json({ error: "Missing user id or update fields." });
     }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import './UserProfile.css';
 import { UserInfoInput } from "../../components/UserInfoInput";
 import genericProfilePic from '../../assets/generic-profile-p.jpg';
@@ -10,6 +10,7 @@ import { useFollow } from "../../components/FollowContext";
 import { getFollowersList, getFollowingList } from "../../services/followService";
 import { useToast } from "../../components/ToastContext";
 import { fetcher } from "../../utils/fetcher";
+import { useProfilePicHandler } from "../../hooks/useProfilePicHandler";
 
 export const UserProfile = () => {
     const { username: routeUsername } = useParams<{ username: string }>();
@@ -27,7 +28,7 @@ export const UserProfile = () => {
     const [profileFollowingCount, setProfileFollowingCount] = useState(0);
     const pluralize = (count: number, noun: string) => `${count} ${noun}${count !== 1 ? "s" : ""}`;
     const { showToast } = useToast();
-     const hasShownToast = useRef(false);
+    const hasShownToast = useRef(false);
 
     const isOwnProfile = routeUsername === currentUser?.username;
 
@@ -55,9 +56,12 @@ export const UserProfile = () => {
             try {
                 const data = await fetcher(`/users/${encodeURIComponent(routeUsername)}`);
                 setUserProfile(data);
+                if (!data) {
+                    showToast(`Failed to fetch user profile: ${routeUsername}`, "error");
+                }
             } catch (error) {
                 console.error("Failed to fetch user profile:", error);
-                 if (!hasShownToast.current) {
+                if (!hasShownToast.current) {
                     showToast(`Failed to fetch user profile: ${routeUsername}`, "error");
                     hasShownToast.current = true;
                 }
@@ -96,36 +100,38 @@ export const UserProfile = () => {
         await fetchProfileFollowCounts();
     };
 
-    const handleProfilePicChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
-            setNewProfilePic(url);
-            setUserProfile((prev) =>
-                prev
-                    ? {
-                        ...prev,
-                        profilePic: url,
-                    }
-                    : null
-            );
-        }
-    };
-
     const handleProfileComplete = async (fields: { username: string; displayName: string; summary: string }) => {
-        
+
         try {
             setUserProfile(prev => prev ? { ...prev, ...fields, activated: true } : null);
             setShowUserSetup(false);
-            
+
             navigate(`/profile/${fields.username}`, { replace: true });
-            
+
             showToast("Profile completed successfully!", "success");
         } catch (error) {
             console.error("Error handling profile completion:", error);
             showToast("Error completing profile", "error");
         }
     };
+
+    const { handleProfilePicChange } = useProfilePicHandler(
+        (_file, profilePicUrl) => {
+            setNewProfilePic(profilePicUrl);
+            setUserProfile((prev) => prev ? { ...prev, profilePic: profilePicUrl } : null);
+
+            if (!hasShownToast.current) {
+                showToast(`Successfully updated profile picture`, "success");
+                hasShownToast.current = true;
+            }
+        },
+        (err) => {
+            if (!hasShownToast.current) {
+                showToast(`Failed to update profile picture: ${err}`, "error");
+                hasShownToast.current = true;
+            }
+        }
+    );
 
     const handleProfileSetupClose = () => {
         navigate('/', { replace: true });
@@ -163,12 +169,23 @@ export const UserProfile = () => {
         return <div className="user-profile-container">User not found</div>;
     }
 
+    if (isOwnProfile && !userProfile.activated) {
+        return (
+            <UserInfoInput
+                userId={userProfile.id}
+                onClose={() => { }}
+                onSubmit={fields => {
+                    setUserProfile({ ...userProfile, ...fields, activated: true });
+                }}
+            />
+        );
+    }
     return (
         <div className="user-profile-container">
             <div className="user-header">
                 <div className="profile-pic-wrapper">
                     <img
-                        src={newProfilePic || userProfile.profilePic || genericProfilePic}
+                        src={`http://localhost:3000${newProfilePic || userProfile.profilePic || genericProfilePic}`}
                         alt="Profile"
                         className="profile-pic"
                     />
