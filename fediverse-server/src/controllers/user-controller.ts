@@ -10,6 +10,24 @@ import dotenv from 'dotenv';
 dotenv.config();
 const frontendServerUrl = new URL(process.env.FRONTEND_SERVER_URL as string);
 
+const fetchCollectionCount = async (url: string): Promise<number> => {
+  try {    
+    const response = await getExternalServer(new URL(url), '');
+    
+    if (!response.ok) {
+      return 0;
+    }
+
+    const collection = await response.json();
+    
+    const count = collection.totalItems || collection.total || 0;
+    
+    return count;
+  } catch (error) {
+    return 0;
+  }
+};
+
 export const getPersonFromUsername = async (req: Request, res: Response) => {
   const username = req.params.username;
 
@@ -86,8 +104,27 @@ export const getExternalUserFromUsername = async (req: Request, res: Response) =
 
   const user : User = getUserFromPerson(person);
 
+  let followersCount = 0;
+  let followingCount = 0;
+
+  if (person.followers) {
+    followersCount = await fetchCollectionCount(person.followers);
+  }
+
+  if (person.following) {
+    followingCount = await fetchCollectionCount(person.following);
+  }
+
+  const userWithCounts = {
+    ...user,
+    followersCount,
+    followingCount,
+    followersUrl: person.followers,
+    followingUrl: person.following
+  };
+
   res.setHeader('Content-Type', 'application/activity+json');
-  res.status(200).json(user);
+  res.status(200).json(userWithCounts);
 };
 
 export const searchExternalUsers = async (req: Request, res: Response) => {
@@ -114,10 +151,24 @@ export const searchExternalUsers = async (req: Request, res: Response) => {
           const actorResponse = await getExternalServer(new URL(personUrl), '');
           if (actorResponse.ok) {
             const actorData = await actorResponse.json();
+            
+            let followersCount = 0;
+            let followingCount = 0;
+            
+            if (actorData.followers) {
+              followersCount = await fetchCollectionCount(actorData.followers);
+            }
+            
+            if (actorData.following) {
+              followingCount = await fetchCollectionCount(actorData.following);
+            }
+
             results.push({
               username: query,
               domain,
               actor: actorData,
+              followersCount,
+              followingCount,
               source: 'webfinger'
             });
           }

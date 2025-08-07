@@ -1,6 +1,5 @@
 import { User } from "../types/user";
 import { requestFediverseServer } from "../utils/fediverse-service";
-import { User } from "../types/user";
 
 export const searchFederatedUsers = async (query: string): Promise<User[]> => {
   try {
@@ -10,11 +9,14 @@ export const searchFederatedUsers = async (query: string): Promise<User[]> => {
     for (const domain of knownDomains) {
       try {
         if (query.includes('@')) {
-          const [username, searchDomain] = query.split('@');
-          if (searchDomain === domain) {
-            const user = await fetchExternalUser(username, domain);
+          const lastAtIndex = query.lastIndexOf('@');
+          let username = query.substring(0, lastAtIndex).replace(/^@+/, '');
+          const searchDomain = query.substring(lastAtIndex + 1);
+          if (username && searchDomain) {
+            const user = await fetchExternalUser(username, searchDomain);
             if (user) results.push(user);
           }
+          break;
         } else {
           const user = await fetchExternalUser(query, domain);
           if (user) results.push(user);
@@ -54,6 +56,8 @@ async function fetchExternalUser(username: string, domain: string): Promise<User
       outbox: actorData.outbox,
       followers: actorData.followers,
       following: actorData.following,
+      followersCount: actorData.followersCount || 0,
+      followingCount: actorData.followingCount || 0,
       domain,
       isFederated: true
     };
