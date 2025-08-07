@@ -2,7 +2,7 @@ import type { Like, Post } from "../types/Post";
 import { fetcher } from "../utils/fetcher";
 import { getLikesByPost } from "./likeService";
 
-const BASE_MEDIA_URL = "https://snapcore.subspace.site";
+const BASE_MEDIA_URL = "http://localhost:3000";
 
 type RawPost = {
   _id: string;
