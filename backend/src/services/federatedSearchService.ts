@@ -1,6 +1,5 @@
 import { User } from "../types/user";
 import { requestFediverseServer } from "../utils/fediverse-service";
-import { User } from "../types/user";
 
 export const searchFederatedUsers = async (query: string): Promise<User[]> => {
   try {

@@ -23,8 +23,8 @@ jobs:
       - name: Write server.key from secret
         run: |
           mkdir -p ./server
-          echo "${{ secrets.SERVER_PKEY }}" > ./backend/server.key
-          chmod 600 ./backend/server.key
+          echo "${{ secrets.SERVER_PKEY }}" > ./fediverse-server/server.key
+          chmod 600 ./fediverse-server/server.key
 
       - name: Copy files to EC2 with scp
         uses: appleboy/scp-action@v1
@@ -33,7 +33,7 @@ jobs:
           username: ${{ vars.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          source: "./backend/"
+          source: "./fediverse-server/"
           target: "/home/${{ vars.EC2_USER }}/snapcore-server/"
           rm: true
 
@@ -47,7 +47,7 @@ jobs:
           script: |
             FEDIVERSE_DOMAIN="${{ vars.FEDIVERSE_DOMAIN }}"
             CERTBOT_EMAIL="${{ secrets.CERTBOT_EMAIL }}"
-            APP_DIR="/home/${{ vars.EC2_USER }}/snapcore-server/backend"
+            APP_DIR="/home/${{ vars.EC2_USER }}/snapcore-server/fediverse-server"
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
             echo "--- Deploying to EC2: $(pwd) ---"
