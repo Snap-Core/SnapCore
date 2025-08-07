@@ -163,7 +163,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
   return (
     <div className="feed-container">
       {loading && <div className="feed-empty">Loading posts...</div>}
-      {posts.length === 0 && !error && <div className="feed-empty">No posts yet.</div>}
+      {posts.length === 0 && !error && !loading && <div className="feed-empty">No posts yet.</div>}
       {posts.length === 0 && error && <div className="feed-failed">Failed to fetch posts.</div>}
       {posts.map((post) => (
         <div className="post-card" key={post.id}>
