@@ -1,6 +1,8 @@
 import type { Like, Post } from "../types/Post";
 import { fetcher } from "../utils/fetcher";
 import { getLikesByPost } from "./likeService";
+import { getCommentsForObject } from "./commentService";
+import type { PostComment } from "../types/PostComment"; 
 
 const BASE_MEDIA_URL = "http://localhost:3000";
 
@@ -24,7 +26,6 @@ export const getAllPosts = async (
   const encodedActor = encodeURIComponent(currentUserActor);
 
   const rawPosts: RawPost[] = await fetcher(`/posts?actor=${encodedActor}`);
-  // const rawPosts: RawPost[] = await fetcher(`/posts`);
 
   const posts = await Promise.all(
     rawPosts.map(async (raw): Promise<Post | null> => {
@@ -36,10 +37,13 @@ export const getAllPosts = async (
       }
 
       let likes: Like[] = [];
+      let comments: PostComment[] = []; 
+
       try {
         likes = await getLikesByPost(postUrl);
+        comments = await getCommentsForObject(postUrl);
       } catch (error) {
-        console.error(`Failed to fetch likes for post ${postUrl}`, error);
+        console.error(`Failed to fetch data for post ${postUrl}`, error);
       }
 
       const liked = likes.some((like) => like.actor.endsWith(currentUserActor));
@@ -68,7 +72,7 @@ export const getAllPosts = async (
         createdAt: raw.createdAt,
         liked,
         likes,
-        comments: [],
+        comments,
         user: {
           username,
           displayName: username,

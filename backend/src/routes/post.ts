@@ -1,5 +1,4 @@
 import express from 'express';
-import path from 'path';
 import { createPost, getAllPosts, getPostsByActor } from '../controller/postController';
 import { upload } from '../middleware/uploadMiddleware';
 

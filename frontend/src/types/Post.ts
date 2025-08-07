@@ -1,3 +1,4 @@
+import type { PostComment } from "./PostComment";
 export type Comment = {
   id: string;
   text: string;
@@ -23,7 +24,7 @@ export type Post = {
   createdAt: string;
   likes?: Like[];
   liked?: boolean;
-  comments?: Comment[];
+  comments?: PostComment[];
   user?: {
     username?: string;
     displayName?: string;
