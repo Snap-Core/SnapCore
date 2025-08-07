@@ -31,7 +31,7 @@ const generateActivityPubNote = (
     note.object.attachment = {
       type: mediaType === 'image' ? 'Image' : 'Video',
       mediaType: mediaType === 'image' ? 'image/jpeg' : 'video/mp4',
-      url: `https://your-domain.com${mediaUrl}`
+      url: `https://snapcore.subspace.site/api${mediaUrl}`
     };
   }
 
