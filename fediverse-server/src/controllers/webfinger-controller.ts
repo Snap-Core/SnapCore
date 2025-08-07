@@ -28,8 +28,8 @@ export const handleWebFinger = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Actor domain is not our domain' });
   }
 
-  let user : User;
-  let community : Community;
+  let user : User|undefined;
+  let community : Community|undefined;
 
   try {
     user = await requestBackendServer(
@@ -41,7 +41,6 @@ export const handleWebFinger = async (req: Request, res: Response) => {
         },
       });
   } catch (error) {
-    return res.status(500).json('Could not retrieve user from backend server\n' +  error);
   }
 
   try {
@@ -54,7 +53,6 @@ export const handleWebFinger = async (req: Request, res: Response) => {
         },
       });
   } catch (error) {
-    return res.status(500).json('Could not retrieve community from backend server\n' +  error);
   }
 
   if (!user && !community) {
@@ -66,12 +64,12 @@ export const handleWebFinger = async (req: Request, res: Response) => {
   const actorUrl = `${fediverseServerUrl}${
     isUser ? 'users' : 'community'
   }/${
-    isUser ? user.username : community.handle
+    isUser ? user?.username : community?.handle
   }`;
 
   res.setHeader('Content-Type', 'application/jrd+json');
   res.json({
-    subject: `acct:${isUser ? user.username : community.handle}@${fediverseDomain}`,
+    subject: `acct:${isUser ? user?.username : community?.handle}@${fediverseDomain}`,
     links: [
       {
         rel: 'self',
