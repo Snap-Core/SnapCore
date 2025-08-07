@@ -1,30 +1,30 @@
 import { Request, Response } from 'express';
-import {getPersonFromUser, getUserFromPerson} from '../utils/convert-activity-pub-objects';
-import {User} from "../types/user";
-import {requestBackendServer} from "../utils/backend-service";
-import {getExternalServer} from "../utils/external-federated-service";
-import {WebfingerResponse} from "../types/webfinger-response";
+import { getPersonFromUser, getUserFromPerson } from '../utils/convert-activity-pub-objects';
+import { User } from "../types/user";
+import { requestBackendServer } from "../utils/backend-service";
+import { getExternalServer } from "../utils/external-federated-service";
+import { WebfingerResponse } from "../types/webfinger-response";
 import { Person } from '../types/person';
 import dotenv from 'dotenv';
-import {FollowPageResponse} from "../types/follow-page-response";
-import {FollowResponse} from "../types/follow-response";
+import { FollowPageResponse } from "../types/follow-page-response";
+import { FollowResponse } from "../types/follow-response";
 
 dotenv.config();
 const frontendServerUrl = new URL(process.env.FRONTEND_SERVER_URL as string);
 const fediverseServerUrl = new URL(process.env.FEDIVERSE_SERVER_URL as string);
 
 const fetchCollectionCount = async (url: string): Promise<number> => {
-  try {    
+  try {
     const response = await getExternalServer(new URL(url), '');
-    
+
     if (!response.ok) {
       return 0;
     }
 
     const collection = await response.json();
-    
+
     const count = collection.totalItems || collection.total || 0;
-    
+
     return count;
   } catch (error) {
     return 0;
@@ -39,7 +39,7 @@ export const getPersonFromUsername = async (req: Request, res: Response) => {
       .json({ error: 'Invalid get user request' });
   }
 
-  let user : User;
+  let user: User;
   try {
     user = await requestBackendServer(
       `users/${username}`,
@@ -65,7 +65,7 @@ export const getPersonFromUsername = async (req: Request, res: Response) => {
     return res.status(200).json(actor);
   }
 
-  return res.redirect(`${frontendServerUrl}profile/${username}`); 
+  return res.redirect(`${frontendServerUrl}profile/${username}`);
 };
 
 export const getExternalUserFromUsername = async (req: Request, res: Response) => {
@@ -81,7 +81,7 @@ export const getExternalUserFromUsername = async (req: Request, res: Response) =
     return res.status(500).json({ error: 'Could not retrieve external actor' });
   }
 
-  const webfingerData : WebfingerResponse = await webfingerResponse.json();
+  const webfingerData: WebfingerResponse = await webfingerResponse.json();
 
   if (!webfingerData) {
     return res.status(500).json({ error: 'Could not deserialize webfinger response' });
@@ -99,13 +99,13 @@ export const getExternalUserFromUsername = async (req: Request, res: Response) =
     return res.status(500).json({ error: 'Could not retrieve person object information' });
   }
 
-  const person : Person = await personResponse.json();
+  const person: Person = await personResponse.json();
 
   if (!person) {
     return res.status(500).json({ error: 'Could not deserialize person response' });
   }
 
-  const user : User = getUserFromPerson(person);
+  const user: User = getUserFromPerson(person);
 
   let followersCount = 0;
   let followingCount = 0;
@@ -142,7 +142,7 @@ export const searchExternalUsers = async (req: Request, res: Response) => {
   for (const domain of domains) {
     try {
       const webfingerResponse = await getExternalServer(
-        new URL(`https://${domain}`), 
+        new URL(`https://${domain}`),
         `.well-known/webfinger?resource=acct:${query}@${domain}`
       );
 
@@ -154,14 +154,14 @@ export const searchExternalUsers = async (req: Request, res: Response) => {
           const actorResponse = await getExternalServer(new URL(personUrl), '');
           if (actorResponse.ok) {
             const actorData = await actorResponse.json();
-            
+
             let followersCount = 0;
             let followingCount = 0;
-            
+
             if (actorData.followers) {
               followersCount = await fetchCollectionCount(actorData.followers);
             }
-            
+
             if (actorData.following) {
               followingCount = await fetchCollectionCount(actorData.following);
             }
@@ -185,7 +185,56 @@ export const searchExternalUsers = async (req: Request, res: Response) => {
   res.json({ results, query, searchedDomains: domains });
 };
 
-export const getPersonFollowFromBackend = async (username : string, acceptHeader : string, isFollowing : boolean, page : number | null = null) => {
+
+
+export const getUserOutbox = async (req: Request, res: Response) => {
+  const { outbox } = req.query as { outbox: string };
+
+  console.log("");
+
+  if (!outbox) {
+    return res.status(400).json({ error: 'Invalid outbox request' });
+  }
+
+  const response = await getExternalServer(new URL(outbox));
+
+  if (!response.ok) {
+    return res.status(500).json({ error: 'Could not retrieve inbox' });
+  }
+
+  const data = await response.json();
+
+  if (!data) {
+    return res.status(500).json({ error: 'Could not deserialize response' });
+  }
+
+  if ((data.orderedItems && data.orderedItems.length) || data.totalItems > 0) {
+    let items: any[];
+    if (data.orderedItems) {
+      items = data.orderedItems;
+    } else {
+      const dataResponse = await getExternalServer(new URL(data.first));
+      items = [];
+      if (dataResponse.ok) {
+        const outboxData = await dataResponse.json();
+        items.push(...outboxData.orderedItems);
+      }
+    }
+    if (items && items.length) {
+      res.setHeader('Content-Type', 'application/activity+json');
+      res.status(200).json({ items: items });
+      return;
+    } else {
+      return res.status(500).json({ error: 'Could not fetch outbox items' });
+    }
+  }
+
+  res.setHeader('Content-Type', 'application/activity+json');
+  res.status(200).json(data);
+
+};
+
+export const getPersonFollowFromBackend = async (username: string, acceptHeader: string, isFollowing: boolean, page: number | null = null) => {
 
   const personUrl = `${fediverseServerUrl}users/${username}`;
   const encodedPersonUrl = encodeURIComponent(personUrl);
@@ -217,7 +266,7 @@ export const getPersonFollowFromBackend = async (username : string, acceptHeader
       id: `${personUrl}/${path}?page=${page}`,
       type: "OrderedCollectionPage",
       totalItems: totalItems,
-      next: totalItems / 10.0 >= page ? `${personUrl}/${path}?page=${page+1}` : '',
+      next: totalItems / 10.0 >= page ? `${personUrl}/${path}?page=${page + 1}` : '',
       partOf: `${personUrl}/${path}`,
       orderedItems: followList,
     } as FollowPageResponse
@@ -247,7 +296,7 @@ export const getPersonFollowingByUsername = async (req: Request, res: Response) 
 
       return res.status(200).json(response);
     } catch (error) {
-      return res.status(500).json({error: 'Could not retrieve following request from backend server' + error});
+      return res.status(500).json({ error: 'Could not retrieve following request from backend server' + error });
     }
   }
   return res.redirect(`${frontendServerUrl}profile/${username}/following${page ? `?page=${page}` : ''}`);
@@ -270,7 +319,7 @@ export const getPersonFollowersByUsername = async (req: Request, res: Response) 
 
       return res.status(200).json(response);
     } catch (error) {
-      return res.status(500).json({error: 'Could not retrieve followers request from backend server' + error});
+      return res.status(500).json({ error: 'Could not retrieve followers request from backend server' + error });
     }
   }
   return res.redirect(`${frontendServerUrl}profile/${username}/followers${page ? `?page=${page}` : ''}`);

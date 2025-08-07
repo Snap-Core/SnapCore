@@ -8,7 +8,6 @@ import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import {CreateCommunity} from "../types/createCommunity";
 import {now} from "mongoose";
 import { getDynamoClient } from "../middleware/dynamoDbClient";
-import { Community } from "../types/community";
 
 dotenv.config();
 

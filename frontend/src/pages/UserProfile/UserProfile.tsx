@@ -312,9 +312,10 @@ export const UserProfile = () => {
                 {!isExternalUser ? (
                     <Feed username={userProfile.username} />
                 ) : (
-                    <p style={{ color: '#666', fontStyle: 'italic' }}>
-                        Posts from federated users are not displayed in this demo.
-                    </p>
+                    <Feed username={userProfile.username} />
+                    // <p style={{ color: '#666', fontStyle: 'italic' }}>
+                    //     Posts from federated users are not displayed in this demo.
+                    // </p>
                 )}
             </div>
         </div>

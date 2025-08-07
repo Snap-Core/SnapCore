@@ -2,16 +2,20 @@ import express from 'express';
 import {
   getExternalUserFromUsername, getPersonFollowersByUsername, getPersonFollowingByUsername,
   getPersonFromUsername,
+  getUserOutbox,
   searchExternalUsers
 } from '../controllers/user-controller';
 import {requireAuth} from "../middleware/auth-middleware";
 
 const router = express.Router();
 
-router.get('/external', requireAuth, getExternalUserFromUsername);
+router.get('/external', getExternalUserFromUsername);
 router.post('/search-external', requireAuth, searchExternalUsers);
 router.get('/:username/following', getPersonFollowingByUsername);
 router.get('/:username/followers', getPersonFollowersByUsername);
+router.get('/outbox', getUserOutbox);
+router.get('/external', getExternalUserFromUsername);
+router.post('/search-external', searchExternalUsers); 
 router.get('/:username', getPersonFromUsername);
 
 export default router;

@@ -4,7 +4,7 @@ import webfingerRoutes from "./routes/webfinger-routes";
 import groupRoutes from "./routes/group-routes";
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = 4000;
 
 app.use(express.json());
 
