@@ -4,7 +4,7 @@ import { fetcher } from "../utils/fetcher";
 import { getLikesByPost } from "./likeService";
 
 const BASE_MEDIA_URL = URLS.APP;
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = URLS.API_HOST;
 
 type RawPost = {
   _id: string;

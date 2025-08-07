@@ -1,6 +1,7 @@
 export const URLS = {
     API: 'https://snapcore.subspace.site/api',
     APP: 'https://snapcore.subspace.site',
+    API_HOST: 'https://snapcore.subspace.site',
 }
 
 // export const URLS = {

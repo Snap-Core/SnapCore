@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { fetcher } from "../utils/fetcher";
+import { URLS } from "../enums/urls";
 
 export function useProfilePicHandler(
   onSuccess: (file: File, profilePicUrl: string) => void,
@@ -20,7 +21,7 @@ export function useProfilePicHandler(
     formData.append("profilePic", file);
 
     try {
-      const res = await fetch("http://localhost:3000/uploads", {
+      const res = await fetch(`${URLS.API_HOST}/uploads`, {
         method: "PATCH",
         body: formData,
       });

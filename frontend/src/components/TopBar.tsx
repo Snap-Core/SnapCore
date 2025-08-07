@@ -3,6 +3,7 @@ import { useAuth } from "../auth/useAuth";
 import { LogoutButton } from "./LogoutButton";
 import { GoogleLoginButton } from "./GoogleLoginButton";
 import genericProfilePic from "./../assets/generic-profile-p.jpg"
+import { URLS } from "../enums/urls";
 
 export const TopBar = () => {
   const { user, loading } = useAuth();
@@ -34,7 +35,7 @@ export const TopBar = () => {
           <>
             <Link to={`/profile/${user.username ?? 'user-activation'}`}>
               <img
-                src={`http://localhost:3000${user.profilePic || genericProfilePic}`}
+                src={`${URLS.API_HOST}${user.profilePic || genericProfilePic}`}
                 alt={user.displayName || user.username}
                 className="avatar"
               />

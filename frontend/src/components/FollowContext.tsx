@@ -7,6 +7,7 @@ import {
 } from "../services/followService";
 import { useToast } from "./ToastContext";
 import { useAuth } from "../auth/useAuth";
+import { URLS } from "../enums/urls";
 
 type FollowActivity = {
   _id: string;
@@ -32,7 +33,7 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
   const [followers, setFollowers] = useState<Set<string>>(new Set());
   const { user: currentUser } = useAuth();
-  const actorUrl = `http://localhost:3000/users/${currentUser?.username}`;
+  const actorUrl = `${URLS.API_HOST}/users/${currentUser?.username}`;
   const { showToast } = useToast();
   const hasShownToast = useRef(false);
 
@@ -66,7 +67,7 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const toggleFollow = async (targetUsername: string) => {
     if (!targetUsername || targetUsername === currentUser?.username) return;
 
-    const targetUrl = `http://localhost:3000/users/${targetUsername}`;
+    const targetUrl = `${URLS.API_HOST}/users/${targetUsername}`;
     const isFollowing = followedUsers.has(targetUsername);
 
     try {

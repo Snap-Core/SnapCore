@@ -236,7 +236,7 @@ export const UserProfile = () => {
             <div className="user-header">
                 <div className="profile-pic-wrapper">
                     <img
-                        src={`http://localhost:3000${newProfilePic || userProfile.profilePic || genericProfilePic}`}
+                        src={`${URLS.API_HOST}${newProfilePic || userProfile.profilePic || genericProfilePic}`}
                         alt="Profile"
                         className="profile-pic"
                     />
