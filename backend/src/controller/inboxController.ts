@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import fetch from 'node-fetch';
 import { v4 as uuidv4 } from 'uuid';
 import Post from '../types/post';
 import Like from '../types/likes';

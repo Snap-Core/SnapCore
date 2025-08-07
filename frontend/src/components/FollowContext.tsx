@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   getFollowersList,
   getFollowingList,
@@ -34,6 +34,7 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { user: currentUser } = useAuth();
   const actorUrl = `http://localhost:3000/users/${currentUser?.username}`;
   const { showToast } = useToast();
+  const hasShownToast = useRef(false);
 
   const refreshFollowData = async () => {
     try {
@@ -81,7 +82,10 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setFollowedUsers((prev) => new Set(prev).add(targetUsername));
       }
     } catch (error) {
-      showToast(`Failed to toggle follow`, "error");
+      if (!hasShownToast.current) {
+        showToast(`Failed to toggle follow`, "error");
+        hasShownToast.current = true;
+      }
 
     }
   };

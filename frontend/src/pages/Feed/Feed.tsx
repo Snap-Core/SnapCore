@@ -29,14 +29,8 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
   const { followedUsers, toggleFollow } = useFollow();
   const isFollowing = (username: string) => followedUsers.has(username);
   const { showToast } = useToast();
-  // const hasShownToast = useRef(false);
 
-  // const currentUser = {
-  //   username: "Happy", // Simulate logged-in user
-  // };
-
-  const navigate = useNavigate();
-
+   const navigate = useNavigate();
   useEffect(() => {
     setLoading(true);
     setError(false);
@@ -51,14 +45,11 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
       })
       .catch((err) => {
         console.error("Failed to fetch posts", err);
-        // if (!hasShownToast.current) {
-        //   showToast(`Failed to fetch posts`, "error");
-        //   hasShownToast.current = true;
-        // }
 
-        setLoading(false);
         setError(true);
-      });
+      }).finally(() => {
+        setLoading(false);
+      });;
   }, [currentUser?.username, reloadKey]);
 
   useEffect(() => {
@@ -167,17 +158,12 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
     setShowComments(false);
   };
 
-  if (loading) return <div>Loading posts...</div>;
 
   return (
     <div className="feed-container">
       {loading && <div className="feed-empty">Loading posts...</div>}
-      {posts.length === 0 && !error && (
-        <div className="feed-empty">No posts yet.</div>
-      )}
-      {posts.length === 0 && error && (
-        <div className="feed-failed">Failed to fetch posts.</div>
-      )}
+      {posts.length === 0 && !error && !loading && <div className="feed-empty">No posts yet.</div>}
+      {posts.length === 0 && error && <div className="feed-failed">Failed to fetch posts.</div>}
       {posts.map((post) => (
         <div className="post-card" key={post.id}>
           <div className="post-header">
@@ -190,10 +176,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
             </Link>
             <div className="post-meta">
               <div className="post-user-row">
-                <Link
-                  to={`/profile/${post.user?.username}`}
-                  className="post-username"
-                >
+                <Link to={`/profile/${post.user?.username}`} className="post-username">
                   {post.user?.username}
                 </Link>
                 {post.user?.username !== currentUser?.username && (
@@ -201,12 +184,10 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
                     className="follow-text"
                     onClick={() => handleFollow(post.user?.username)}
                   >
-                    •{" "}
-                    {isFollowing(post.user?.username || "")
-                      ? "Following"
-                      : "Follow"}
+                    • {isFollowing(post.user?.username || "") ? "Following" : "Follow"}
                   </span>
                 )}
+
               </div>
               <span className="post-time">
                 • {formatRelativeTime(post.createdAt)}
@@ -214,10 +195,11 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
             </div>
           </div>
 
-          {post.text && <div className="feed-post-text">{post.text}</div>}
+        {post.text && <div className="feed-post-text">{post.text}</div>}
 
           {post.media && post.media?.length > 0 && (
             <div className="feed-post-media">
+
               {post.media.map((media, index) =>
                 media.type === "video" ? (
                   <video key={index} className="feed-post-video" controls>
@@ -225,14 +207,10 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
                     Your browser does not support the video tag.
                   </video>
                 ) : (
-                  <img
-                    key={index}
-                    className="feed-post-image"
-                    src={media.url}
-                    alt={`media-${index}`}
-                  />
+                  <img key={index} className="feed-post-image" src={media.url} alt={`media-${index}`} />
                 )
               )}
+
             </div>
           )}
 
@@ -244,12 +222,15 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
               💬 {post.comments?.length || 0}
             </button>
           </div>
+
+
         </div>
       ))}
 
       {showComments && selectedPost && (
         <div className="modal-backdrop" onClick={() => setShowComments(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
+
             <div className="modal-header">
               <h4>{selectedPost.comments?.length || 0} Comments</h4>
               <button
@@ -261,16 +242,15 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
               </button>
             </div>
 
+
             <div className="comment-list">
-              {selectedPost.comments?.length ? (
-                selectedPost.comments?.map((comment) => (
-                  <div key={comment.id} className="comment">
-                    <p>
-                      <strong>{comment.user}</strong>: {comment.text}
-                    </p>
-                  </div>
-                ))
-              ) : (
+              {selectedPost.comments?.length ? (selectedPost.comments?.map((comment) => (
+                <div key={comment.id} className="comment">
+                  <p>
+                    <strong>{comment.user}</strong>: {comment.text}
+                  </p>
+                </div>
+              ))) : (
                 <p>No comments yet.</p>
               )}
             </div>
@@ -294,6 +274,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

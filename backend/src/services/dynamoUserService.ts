@@ -42,7 +42,7 @@ export async function createUserIfNotExists(user: GoogleUserInfo) {
   });
 
   await getDynamoClient().send(cmd);
-  return { id: user.sub, name: user.name, email: user.email, isExisting: false };
+  return { id: user.sub, name: user.name, email: user.email, isExisting: false, profilePic: undefined };
 }
 
 export async function findUserByUsername(username: string) {
@@ -61,7 +61,7 @@ export async function findUserByUsername(username: string) {
 
 export async function updateUser(
   id: string,
-  updates: Partial<{ displayName: string; username: string; summary: string; activated: boolean }>
+  updates: Partial<{ displayName: string; username: string; summary: string; activated: boolean, profilePic: string; }>
 ) {
   if (
     updates.username &&
@@ -119,6 +119,12 @@ export async function updateUser(
   if (typeof activated === "undefined") {
     activated = hasDisplayName && hasUsername && hasSummary;
   }
+
+  if (updates.profilePic) {
+  updateExpr.push("#pp = :profilePic");
+  exprAttrNames["#pp"] = "profilePic";
+  exprAttrValues[":profilePic"] = updates.profilePic;
+}
 
   updateExpr.push("#act = :activated");
   exprAttrNames["#act"] = "activated";
