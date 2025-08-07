@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 const MAX_TEXT = 1000;
 const MAX_IMAGE_MB = 5;
 const MAX_VIDEO_MB = 15;
-const MAX_FILES = 10;
+const MAX_FILES = 1;
 const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
 const allowedVideoTypes = ["video/mp4", "video/webm"];
 
@@ -45,7 +45,7 @@ export const CreatePost = () => {
 
     if (media.length > 0) {
       if (media.length > MAX_FILES) {
-        setError(`You can upload up to ${MAX_FILES} files.`);
+        setError(`You can upload up to ${MAX_FILES} file(s).`);
         return;
       }
     }
@@ -82,9 +82,6 @@ export const CreatePost = () => {
         <div className="post-rules">
           <strong>Rules:</strong>
           <ul>
-            <li>
-              Upload up to {MAX_FILES} files.
-            </li>
             <li>
               Images: (JPG, PNG, WEBP), each ≤{" "}
               {MAX_IMAGE_MB}MB
@@ -147,18 +144,17 @@ export const CreatePost = () => {
         </div>
         {media.length > 0 && (
           <div className="preview-list">
-            {media.map((img, i) => (
-              <span key={i} className="preview-item">
-                {img.name}
-                <button
-                  type="button"
-                  className="remove-btn"
-                  onClick={() => handleRemoveImage(i)}
-                  title="Remove"
-                >
-                  ×
-                </button>
-              </span>
+            {media.map((file, index) => (
+              <div key={index} className="preview-item">
+                {file.type.startsWith("image/") ? (
+                  <img src={URL.createObjectURL(file)} alt="preview" width={100} />
+                ) : (
+                  <video width={120} controls>
+                    <source src={URL.createObjectURL(file)} type={file.type} />
+                  </video>
+                )}
+                <button onClick={() => handleRemoveImage(index)}>×</button>
+              </div>
             ))}
           </div>
         )}
