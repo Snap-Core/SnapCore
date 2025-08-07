@@ -32,7 +32,7 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
   const [followers, setFollowers] = useState<Set<string>>(new Set());
   const { user: currentUser } = useAuth();
-  const actorUrl = `https://snapcore.subspace.site/users/${currentUser?.username}`;
+  const actorUrl = `http://localhost:3000/users/${currentUser?.username}`;
   const { showToast } = useToast();
 
   const refreshFollowData = async () => {
@@ -65,7 +65,7 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const toggleFollow = async (targetUsername: string) => {
     if (!targetUsername || targetUsername === currentUser?.username) return;
 
-    const targetUrl = `https://snapcore.subspace.site/users/${targetUsername}`;
+    const targetUrl = `http://localhost:3000/users/${targetUsername}`;
     const isFollowing = followedUsers.has(targetUsername);
 
     try {

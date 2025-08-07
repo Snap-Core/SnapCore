@@ -10,6 +10,7 @@ import "./App.css";
 import { TopBar } from "./components/TopBar";
 import { FollowProvider } from "./components/FollowContext";
 import { ToastProvider } from "./components/ToastContext";
+import { PostDetailsPage } from "./pages/PostDetails/PostDetailsPage";
 
 export const App = () => (
   <Router>
@@ -23,6 +24,7 @@ export const App = () => (
               <Route path="/feed" element={<Feed />} />
               <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
               <Route path="/profile/:username" element={<UserProfile />} />
+              <Route path="/post/:id" element={<PostDetailsPage />} />
               <Route path="/user-activation" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
               <Route path="*" element={<PageNotFound />} />
             </Routes>
