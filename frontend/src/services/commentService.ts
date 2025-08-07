@@ -1,9 +1,6 @@
+import { URLS } from "../enums/urls";
 import type { PostComment } from "../types/PostComment";
 import { fetcher } from "../utils/fetcher";
-
-const BASE_MEDIA_URL = "http://localhost:3000";
-
-// --- ActivityPub Types ---
 
 type RawActivityPubCollection = {
   "@context": string;
@@ -52,7 +49,7 @@ const transformActivityPubNote = (note: RawActivityPubNote): PostComment => {
           {
             url: note.attachment.url.startsWith("http")
               ? note.attachment.url
-              : `${BASE_MEDIA_URL}${note.attachment.url.trim()}`,
+              : `${URLS.APP}${note.attachment.url.trim()}`,
             type: note.attachment.mediaType.startsWith("image") ? "image" : "video",
           },
         ]

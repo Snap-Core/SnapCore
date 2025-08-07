@@ -9,10 +9,10 @@ import {CreateCommunity} from "../types/createCommunity";
 import {now} from "mongoose";
 import { getDynamoClient } from "../middleware/dynamoDbClient";
 import { Community } from "../types/community";
+import { URLS } from "../enums/urls";
 
 dotenv.config();
 
-const backendServerUrl : URL = new URL(process.env.BACKEND_SERVER_URL as string);
 const client : DynamoDBClient = getDynamoClient();
 const dynamoDbTableName : string = process.env.DYNAMODB_TABLE!;
 const usernameIndexName : string = process.env.USERNAME_INDEX_NAME!;
@@ -29,7 +29,7 @@ export const createCommunity = async (req: Request, res: Response) => {
 
   const community : Community = {
     ...createCommunity,
-    fediverseId: `${backendServerUrl}community/${req.body.handle}`,
+    fediverseId: `${URLS.FEDIVERSE}/community/${req.body.handle}`,
     created: now(),
     updated: now(),
     publicKey: publicKey,

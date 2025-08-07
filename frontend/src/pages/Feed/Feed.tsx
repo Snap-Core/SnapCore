@@ -11,6 +11,7 @@ import { likePost, unlikePost } from "../../services/likeService";
 import { useFollow } from "../../components/FollowContext";
 import { useToast } from "../../components/ToastContext";
 import { useNavigate } from "react-router-dom";
+import { URLS } from "../../enums/urls";
 
 type FeedProps = {
   username?: string;
@@ -76,9 +77,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
 
   const handleLike = async (postId: string) => {
     const actorUrl = currentUser?.username
-      ? `https://mastinstatok.local/users/${currentUser.username}`
-      : import.meta.env.MODE === "development"
-      ? "https://mastinstatok.local/users/test-actor"
+      ? `${URLS.APP}/users/${currentUser.username}`
       : null;
 
     if (!actorUrl) {

@@ -10,6 +10,7 @@ import { useFollow } from "../../components/FollowContext";
 import { getFollowersList, getFollowingList } from "../../services/followService";
 import { useToast } from "../../components/ToastContext";
 import { fetcher } from "../../utils/fetcher";
+import { URLS } from "../../enums/urls";
 
 export const UserProfile = () => {
     const { username: routeUsername } = useParams<{ username: string }>();
@@ -102,7 +103,7 @@ export const UserProfile = () => {
         if (!userProfile || isOwnProfile || isExternalUser) return;
 
         try {
-            const profileUser = `http://localhost:3000/users/${userProfile.username}`;
+            const profileUser = `${URLS.APP}/api/users/${userProfile.username}`;
             const followingList = await getFollowingList(profileUser);
             const followerList = await getFollowersList(profileUser);
 

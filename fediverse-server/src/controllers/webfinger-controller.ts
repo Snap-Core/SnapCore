@@ -3,10 +3,11 @@ import {requestBackendServer} from "../utils/backend-service";
 import dotenv from 'dotenv';
 import { User } from '../types/user';
 import { Community } from '../types/community';
+import { URLS } from '../enums/urls';
 
 dotenv.config();
 
-const fediverseServerUrl = new URL(process.env.FEDIVERSE_SERVER_URL as string);
+const fediverseServerUrl = new URL(URLS.FEDIVERSE);
 const fediverseDomain = fediverseServerUrl.hostname;
 
 export const handleWebFinger = async (req: Request, res: Response) => {

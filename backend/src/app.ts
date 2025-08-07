@@ -15,6 +15,7 @@ import userRouter from './routes/user';
 import commentsRouter from './routes/comments';
 import mediaRoutes from './routes/mediaRoutes';
 import communityRoutes from "./routes/communityRoutes";
+import { URLS } from './enums/urls';
 
 dotenv.config();
 
@@ -24,13 +25,13 @@ const PORT = process.env.PORT || 3000;
 
 connectToDatabase();
 
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:4000'];
+const allowedOrigins = [URLS.APP, URLS.FEDIVERSE];
 
 app.use((req, res, next) => {
   const origin = req.header('Origin');
-  if (origin === 'http://localhost:4000') {
+  if (origin === URLS.FEDIVERSE) {
     cors({
-      origin: 'http://localhost:4000',
+      origin: URLS.FEDIVERSE,
       credentials: true,
     })(req, res, next);
   } else {
@@ -69,5 +70,5 @@ app.use('/api/comments', commentsRouter);
 app.use('/api/community', communityRoutes);
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on ${URLS.APP}:${PORT}`);
 });

@@ -1,10 +1,12 @@
+import { URLS } from "../enums/urls";
+
 export type FollowActivity = {
   _id: string;
   actor: string;
   object: string;
 };
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = URLS.APP;
 
 export const followUser = async (actor: string, object: string) => {
   const activity = {

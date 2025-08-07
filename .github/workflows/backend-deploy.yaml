@@ -81,7 +81,7 @@ jobs:
             PORT=3000
             CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            REDIRECT_URI=http://localhost:5173
+            REDIRECT_URI=https://snapcore.subspace.site
             TOKEN_ENDPOINT=https://oauth2.googleapis.com/token
             TOKEN_INFO=https://oauth2.googleapis.com/tokeninfo
             AUTH_ENDPOINT=https://accounts.google.com/o/oauth2/v2/auth
@@ -95,8 +95,6 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
             KMS_ALIAS=alias/fediverse_private_key_encryption
-            BACKEND_SERVER_URL=http://localhost:3000
-            FEDIVERSE_SERVER_URL=http://localhost:4000
             USERNAME_INDEX_NAME=UsernameIndex
             EOF
 

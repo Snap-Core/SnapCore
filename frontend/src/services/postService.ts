@@ -1,8 +1,9 @@
+import { URLS } from "../enums/urls";
 import type { Like, Post } from "../types/Post";
 import { fetcher } from "../utils/fetcher";
 import { getLikesByPost } from "./likeService";
 
-const BASE_MEDIA_URL = "http://localhost:3000";
+const BASE_MEDIA_URL = URLS.APP;
 
 type RawPost = {
   _id: string;

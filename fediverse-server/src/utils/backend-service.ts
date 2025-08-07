@@ -1,11 +1,12 @@
 import dotenv from 'dotenv';
 import {token} from "../middleware/auth-middleware";
+import { URLS } from '../enums/urls';
 
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-const backendServerUrl = new URL(process.env.BACKEND_SERVER_URL as string);
+const backendServerUrl = new URL(URLS.APP);
 
 export const requestBackendServer = async (path: string, options : Record<string, string | Record<string, string>>) => {
   const headers : Record<string, string> = options.headers as Record<string, string> || {};

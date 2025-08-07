@@ -4,10 +4,11 @@ import {User} from "../types/user";
 import dotenv from "dotenv";
 import {requestFediverseServer} from "../utils/fediverse-service";
 import {searchFederatedUsers} from "../services/federatedSearchService";
+import { URLS } from "../enums/urls";
 
 dotenv.config();
 
-const backendServerUrl = new URL(process.env.BACKEND_SERVER_URL as string);
+const backendServerUrl = new URL(URLS.APP);
 
 export const getCurrentUser = async (req: Request, res: Response) => {
   if (!req.user?.googleId) {
@@ -71,7 +72,7 @@ export const getUserByUsername = async (req: Request, res: Response) => {
 
     const { id, email, ...rest } = user;
 
-    res.json({...rest, fediverseId: `${backendServerUrl}users/${username}`} as User);
+    res.json({...rest, fediverseId: `${URLS.FEDIVERSE}/users/${username}`} as User);
   } catch (error) {
     console.error("Error fetching user by username:", error);
     res.status(500).json({ error: "Failed to fetch user" });

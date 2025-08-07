@@ -1,4 +1,6 @@
-const BASE_URL = "http://localhost:3000";
+import { URLS } from "../enums/urls";
+
+const BASE_URL = URLS.APP;
 
 //Please utilise this code snippet to get likes by a specific post URL thanks :)
 export async function getLikesByPost(postUrl: string) {

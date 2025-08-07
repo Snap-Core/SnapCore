@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { URLS } from '../enums/urls';
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/SnapCore';
+const MONGO_URI = process.env.MONGO_URI || URLS.MONGO_DB;
 
 export const connectToDatabase = async () => {
   try {

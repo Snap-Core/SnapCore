@@ -6,9 +6,10 @@ import {Community} from "../types/community";
 import {getExternalServer} from "../utils/external-federated-service";
 import {WebfingerResponse} from "../types/webfinger-response";
 import {Group} from "../types/group";
+import { URLS } from '../enums/urls';
 
 dotenv.config();
-const frontendServerUrl = new URL(process.env.FRONTEND_SERVER_URL as string);
+const frontendServerUrl = new URL(URLS.APP);
 
 export const getGroupByHandle = async (req: Request, res: Response) => {
   const handle = req.params.handle;
