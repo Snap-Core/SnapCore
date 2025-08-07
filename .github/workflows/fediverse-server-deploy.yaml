@@ -95,7 +95,7 @@ jobs:
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
             KMS_ALIAS=alias/fediverse_private_key_encryption
             BACKEND_SERVER_URL=https://snapcore.subspace.site
-            FEDIVERSE_SERVER_URL=https://snapcore.subspace.site
+            FEDIVERSE_SERVER_URL=https://snapcore-fediverse.subspace.site
             USERNAME_INDEX_NAME=UsernameIndex
             FRONTEND_SERVER_URL=https://snapcore.subspace.site/
             EOF
