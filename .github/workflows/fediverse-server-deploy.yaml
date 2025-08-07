@@ -166,14 +166,14 @@ jobs:
             mkdir -p dist
             rsync -av --exclude='src' --exclude='node_modules' --exclude='dist' ./ dist/
 
-            # Start/restart snapcore-api with PM2
-            echo "Starting/Restarting snapcore-api with PM2..."
+            # Start/restart fediverse-server with PM2
+            echo "Starting/Restarting fediverse-server with PM2..."
             cd dist
             export NODE_ENV=production 
-            if pm2 show snapcore-api &> /dev/null; then
-              pm2 restart snapcore-api
+            if pm2 show fediverse-server &> /dev/null; then
+              pm2 restart fediverse-server
             else
-              pm2 start app.js --name snapcore-api
+              pm2 start server.js --name fediverse-server
             fi
             pm2 save
 
