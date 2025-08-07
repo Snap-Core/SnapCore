@@ -6,9 +6,30 @@ import {getExternalServer} from "../utils/external-federated-service";
 import {WebfingerResponse} from "../types/webfinger-response";
 import { Person } from '../types/person';
 import dotenv from 'dotenv';
+import {FollowPageResponse} from "../types/follow-page-response";
+import {FollowResponse} from "../types/follow-response";
 
 dotenv.config();
 const frontendServerUrl = new URL(process.env.FRONTEND_SERVER_URL as string);
+const fediverseServerUrl = new URL(process.env.FEDIVERSE_SERVER_URL as string);
+
+const fetchCollectionCount = async (url: string): Promise<number> => {
+  try {    
+    const response = await getExternalServer(new URL(url), '');
+    
+    if (!response.ok) {
+      return 0;
+    }
+
+    const collection = await response.json();
+    
+    const count = collection.totalItems || collection.total || 0;
+    
+    return count;
+  } catch (error) {
+    return 0;
+  }
+};
 
 export const getPersonFromUsername = async (req: Request, res: Response) => {
   const username = req.params.username;
@@ -86,8 +107,27 @@ export const getExternalUserFromUsername = async (req: Request, res: Response) =
 
   const user : User = getUserFromPerson(person);
 
+  let followersCount = 0;
+  let followingCount = 0;
+
+  if (person.followers) {
+    followersCount = await fetchCollectionCount(person.followers);
+  }
+
+  if (person.following) {
+    followingCount = await fetchCollectionCount(person.following);
+  }
+
+  const userWithCounts = {
+    ...user,
+    followersCount,
+    followingCount,
+    followersUrl: person.followers,
+    followingUrl: person.following
+  };
+
   res.setHeader('Content-Type', 'application/activity+json');
-  res.status(200).json(user);
+  res.status(200).json(userWithCounts);
 };
 
 export const searchExternalUsers = async (req: Request, res: Response) => {
@@ -114,10 +154,24 @@ export const searchExternalUsers = async (req: Request, res: Response) => {
           const actorResponse = await getExternalServer(new URL(personUrl), '');
           if (actorResponse.ok) {
             const actorData = await actorResponse.json();
+            
+            let followersCount = 0;
+            let followingCount = 0;
+            
+            if (actorData.followers) {
+              followersCount = await fetchCollectionCount(actorData.followers);
+            }
+            
+            if (actorData.following) {
+              followingCount = await fetchCollectionCount(actorData.following);
+            }
+
             results.push({
               username: query,
               domain,
               actor: actorData,
+              followersCount,
+              followingCount,
               source: 'webfinger'
             });
           }
@@ -130,3 +184,94 @@ export const searchExternalUsers = async (req: Request, res: Response) => {
 
   res.json({ results, query, searchedDomains: domains });
 };
+
+export const getPersonFollowFromBackend = async (username : string, acceptHeader : string, isFollowing : boolean, page : number | null = null) => {
+
+  const personUrl = `${fediverseServerUrl}users/${username}`;
+  const encodedPersonUrl = encodeURIComponent(personUrl);
+  const path = isFollowing ? 'following' : 'followers';
+
+  const totalItems = (await requestBackendServer(
+    `inbox/${encodedPersonUrl}/${path}/count`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/activity+json',
+      },
+    })).count;
+
+  const followList = page
+    ? await requestBackendServer(
+      `inbox/${encodedPersonUrl}/${path}?page=${page}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/activity+json',
+        },
+      })
+    : [];
+
+  return page
+    ? {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      id: `${personUrl}/${path}?page=${page}`,
+      type: "OrderedCollectionPage",
+      totalItems: totalItems,
+      next: totalItems / 10.0 >= page ? `${personUrl}/${path}?page=${page+1}` : '',
+      partOf: `${personUrl}/${path}`,
+      orderedItems: followList,
+    } as FollowPageResponse
+    : {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      id: `${personUrl}/${path}`,
+      type: "OrderedCollection",
+      totalItems: totalItems,
+      first: `${personUrl}/${path}?page=1`,
+    } as FollowResponse;
+}
+
+export const getPersonFollowingByUsername = async (req: Request, res: Response) => {
+  const username = req.params.username;
+  const page = Number(req.query.page);
+
+  if (!username) {
+    return res.status(400).json({ error: 'Invalid get following request. Requires username' });
+  }
+
+  const acceptHeader = req.headers.accept || '';
+
+  if (acceptHeader.includes('application/activity+json')) {
+
+    try {
+      const response = await getPersonFollowFromBackend(username, acceptHeader, true, page);
+
+      return res.status(200).json(response);
+    } catch (error) {
+      return res.status(500).json({error: 'Could not retrieve following request from backend server' + error});
+    }
+  }
+  return res.redirect(`${frontendServerUrl}profile/${username}/following${page ? `?page=${page}` : ''}`);
+}
+
+export const getPersonFollowersByUsername = async (req: Request, res: Response) => {
+  const username = req.params.username;
+  const page = Number(req.query.page);
+
+  if (!username) {
+    return res.status(400).json({ error: 'Invalid get followers request. Requires username' });
+  }
+
+  const acceptHeader = req.headers.accept || '';
+
+  if (acceptHeader.includes('application/activity+json')) {
+
+    try {
+      const response = await getPersonFollowFromBackend(username, acceptHeader, false, page);
+
+      return res.status(200).json(response);
+    } catch (error) {
+      return res.status(500).json({error: 'Could not retrieve followers request from backend server' + error});
+    }
+  }
+  return res.redirect(`${frontendServerUrl}profile/${username}/followers${page ? `?page=${page}` : ''}`);
+}

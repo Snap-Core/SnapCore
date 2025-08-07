@@ -12,4 +12,6 @@ export interface User {
   encryptedPrivateKey?: string;
   domain?: string;
   isFederated?: boolean;
+  followersCount?: number;
+  followingCount?: number;
 }
