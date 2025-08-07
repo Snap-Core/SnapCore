@@ -276,7 +276,6 @@ export const getOutbox = async (req: Request, res: Response) => {
 
       return res.status(200).json(getOutboxResponse(personUrl, totalItems, oldestPostId));
     }
-    console.log('response', response);
 
     return res.status(200).json(getOutboxPageResponse(personUrl, queryParams, response.posts));
 

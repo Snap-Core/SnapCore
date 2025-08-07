@@ -87,12 +87,8 @@ export const getAllPosts = async (_req: Request, res: Response) => {
 
 export const getPostsByActor = async (req: Request, res: Response) => {
   try {
-    console.log('here2')
     const actorUrl = decodeURIComponent(req.params.actorUrl);
-    console.log('actorUrl', actorUrl);
     const posts = await PostRepo.getPostsByActor(actorUrl);
-
-    console.log('posts', posts);
 
     if (!posts.length) {
       return res.status(404).json({ message: 'No posts found for this actor' });
@@ -141,8 +137,6 @@ export const getOutboxResponse = async (req: Request, res: Response) => {
 
   }
 
-  console.log('posts', posts)
-
   posts!.forEach((post : any) => {
     post.id = `${actorUrl}/post/${post._id}/activity`;
 
@@ -151,7 +145,6 @@ export const getOutboxResponse = async (req: Request, res: Response) => {
     post.object.id = `${actorUrl}/post/${post._id}`;
   })
 
-    console.log('posts - done', posts);
     return res.status(200).json({posts});
 
 }
