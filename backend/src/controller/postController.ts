@@ -2,15 +2,22 @@ import { Request, Response } from 'express';
 import * as PostRepo from '../models/post';
 import path from 'path';
 import { getUploadedFileUrl } from '../utils/getFileUrl';
-import { fetchExternalUser, fetchExternalUserOutbox, searchFederatedUsers } from '../services/federatedSearchService';
+import { fetchExternalUser, fetchExternalUserOutbox } from '../services/federatedSearchService';
+import Post from "../types/post";
+import dotenv from "dotenv";
+import {Types} from "mongoose";
 
-const generateActivityPubNote = (
+dotenv.config();
+
+const generateActivityPubNote = async (
   actor: string,
   content: string,
   mediaUrl?: string,
   mediaType?: string
 ) => {
-  const id = `https://snapcore.subspace/posts/${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const postCount = await Post.countDocuments();
+  const id = `${actor}/post/${postCount + 1}`;
+  
   const note: any = {
     "@context": "https://www.w3.org/ns/activitystreams",
     type: "Create",
@@ -54,13 +61,15 @@ export const createPost = async (req: Request, res: Response) => {
       mediaType = ['.jpg', '.jpeg', '.png', '.gif'].includes(ext) ? 'image' : 'video';
     }
 
-    const activityPubObject = generateActivityPubNote(actor, content, mediaUrl, mediaType);
+    const activityPubObject = await generateActivityPubNote(actor, content, mediaUrl, mediaType);
+    const id = `${ activityPubObject.id}/activity`;
     const savedPost = await PostRepo.createPost({
+      id,
       content,
       actor,
       mediaUrl,
       mediaType,
-      activityPubObject,
+      object: activityPubObject,
     });
 
     res.status(201).json(savedPost);
@@ -133,3 +142,67 @@ export const getPostsByActor = async (req: Request, res: Response) => {
   }
 };
 
+export const getOutboxResponse = async (req: Request, res: Response) => {
+
+  const actorUrl = decodeURIComponent(req.params.userUrl);
+
+  const {page, min_id, max_id} = req.query as {page: string, min_id: string, max_id: string};
+  let posts;
+
+  if (!page && !min_id && !max_id) {
+    return res.status(200).json(await getInitialOutboxResponseValues(actorUrl));
+  } else if (page && !min_id && !max_id) {
+
+    posts = await Post.find({
+      actor: actorUrl
+    })
+      .sort({ _id: -1 })
+      .limit(10);
+
+  } else if (min_id) {
+
+    posts = await Post.find({
+      actor: actorUrl,
+      _id: { $gt: new Types.ObjectId(min_id) }
+    })
+      .sort({ _id: -1 })
+      .limit(10);
+
+  } else if (max_id) {
+
+    posts = await Post.find({
+      actor: actorUrl,
+      _id: { $lt: new Types.ObjectId(max_id) }
+    })
+      .sort({ _id: -1 })
+      .limit(10);
+
+  }
+
+  posts!.forEach((post : any) => {
+    post.id = `${actorUrl}/post/${post._id}/activity`;
+
+    post.object = post.object || {};
+
+    post.object.id = `${actorUrl}/post/${post._id}`;
+  })
+
+    return res.status(200).json({posts});
+
+}
+
+export const getInitialOutboxResponseValues = async (actorUrl : string) => {
+
+  const [last] : any = await Post.find({ actor: actorUrl })
+    .sort({ 'object.published': 1 })
+    .limit(1)
+    .select('_id');
+
+  const totalItems = await Post.countDocuments({ actor: actorUrl });
+
+  return {
+    totalItems,
+    oldestPostId: last._id.toString(),
+  };
+
+}

@@ -1,9 +1,9 @@
 import express from 'express';
 import { handleInboxPost } from '../controller/inboxController';
-import { verifyHttpSignature } from '../middleware/verifyHttpSignature';
+import {requireAuth} from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-router.post('/', verifyHttpSignature, handleInboxPost);
+router.post('/', requireAuth, handleInboxPost);
 
 export default router;

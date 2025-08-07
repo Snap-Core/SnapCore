@@ -60,7 +60,7 @@ app.use('/uploads', mediaRoutes);
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/posts', postRouter);
-app.use('/inbox', inboxRouter);
+app.use('/api/inbox', inboxRouter);
 app.use('/api/follow', followRouter);
 app.use('/api/likes', likeRouter);
 app.use('/api/users', userRouter);
