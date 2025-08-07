@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken';
 
-// todo: add check on fediverse server endpoints that are called by backend
 export const isJwtAuthenticated = (jwtSecret: string, authHeader : string | undefined) => {
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];

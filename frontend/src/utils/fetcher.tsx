@@ -1,6 +1,6 @@
 import type { FetcherOptions } from "../types/FetcherOptions";
 
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = 'https://snapcore.subspace.site/api';
 
 export const fetcher = (path: string, options: FetcherOptions = {}) => {
   const { body, headers = {}, ...rest } = options;

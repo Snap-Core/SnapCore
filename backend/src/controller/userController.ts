@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { findUserById, updateUser, scanUsers, findUserByUsername, searchUsersByQuery } from "../services/dynamoUserService";
-import {User} from "../../../shared/types/user";
+import {User} from "../types/user";
 import dotenv from "dotenv";
 import {requestFediverseServer} from "../utils/fediverse-service";
 import {searchFederatedUsers} from "../services/federatedSearchService";
