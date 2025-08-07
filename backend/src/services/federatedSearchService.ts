@@ -1,4 +1,3 @@
-import { User } from "../types/user";
 import { requestFediverseServer } from "../utils/fediverse-service";
 import { User } from "../types/user";
 

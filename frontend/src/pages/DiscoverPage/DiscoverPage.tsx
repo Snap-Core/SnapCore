@@ -259,7 +259,6 @@ export const DiscoverPage = () => {
                               <p className="discover-user-username">@{user.username}@{user.domain}</p>
                               <p className="discover-user-bio" dangerouslySetInnerHTML={{ __html: user.summary || '' }}></p>
                               
-                              {/* Add follow counts for federated users */}
                               <div className="discover-user-stats">
                                 <span className="discover-user-stat">
                                   {formatFollowCount(user.followersCount)} followers
