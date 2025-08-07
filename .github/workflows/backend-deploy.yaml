@@ -73,111 +73,15 @@ jobs:
               npm install -g pm2
             fi
 
-            # --- MONGODB USER SETUP ---
-            echo "--- Setting up MongoDB user ---"
-            
-            # Check if MongoDB is running
-            if ! systemctl is-active --quiet mongod; then
-              echo "Starting MongoDB..."
-              sudo systemctl start mongod
-              sudo systemctl enable mongod
-              sleep 3
-            fi
-
-            # Create MongoDB user if it doesn't exist
-            echo "Checking if MongoDB user exists..."
-            USER_EXISTS=$(mongosh --quiet --eval "
-              try {
-                db.getSiblingDB('SnapCore').auth('${{ secrets.MONGO_USERNAME }}', '${{ secrets.MONGO_PASSWORD }}');
-                print('USER_EXISTS');
-              } catch(e) {
-                print('USER_NOT_EXISTS');
-              }
-            " 2>/dev/null | grep -o "USER_EXISTS\|USER_NOT_EXISTS" || echo "USER_NOT_EXISTS")
-
-            if [ "$USER_EXISTS" = "USER_NOT_EXISTS" ]; then
-              echo "Creating MongoDB user: ${{ secrets.MONGO_USERNAME }}"
-              
-              # First, create an admin user if none exists
-              mongosh --quiet --eval "
-                try {
-                  use admin;
-                  if (db.getUsers().length === 0) {
-                    db.createUser({
-                      user: 'admin',
-                      pwd: '${{ secrets.MONGO_ADMIN_PASSWORD }}',
-                      roles: ['root']
-                    });
-                    print('Admin user created');
-                  } else {
-                    print('Admin user already exists');
-                  }
-                } catch(e) {
-                  print('Admin setup: ' + e.message);
-                }
-              " || echo "Admin user setup completed"
-
-              # Create the application user
-              mongosh --quiet --eval "
-                try {
-                  use SnapCore;
-                  db.createUser({
-                    user: '${{ secrets.MONGO_USERNAME }}',
-                    pwd: '${{ secrets.MONGO_PASSWORD }}',
-                    roles: [
-                      { role: 'readWrite', db: 'SnapCore' }
-                    ]
-                  });
-                  print('Application user created successfully');
-                } catch(e) {
-                  print('User creation error: ' + e.message);
-                }
-              " || echo "User creation completed"
-
-              # Enable authentication in MongoDB config
-              echo "Configuring MongoDB authentication..."
-              if ! grep -q "^security:" /etc/mongod.conf; then
-                echo "Adding security configuration to MongoDB..."
-                echo "" | sudo tee -a /etc/mongod.conf > /dev/null
-                echo "# Security configuration" | sudo tee -a /etc/mongod.conf > /dev/null
-                echo "security:" | sudo tee -a /etc/mongod.conf > /dev/null
-                echo "  authorization: enabled" | sudo tee -a /etc/mongod.conf > /dev/null
-                echo "Restarting MongoDB to apply authentication..."
-                sudo systemctl restart mongod
-                sleep 5
-              else
-                echo "MongoDB authentication already configured"
-              fi
-            else
-              echo "MongoDB user already exists, skipping creation"
-            fi
-
-            # Test the connection
-            echo "Testing MongoDB connection..."
-            TEST_CONNECTION=$(mongosh --quiet "mongodb://${{ secrets.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@localhost:27017/SnapCore?authSource=SnapCore" --eval "
-              try {
-                db.runCommand({ping: 1});
-                print('CONNECTION_SUCCESS');
-              } catch(e) {
-                print('CONNECTION_FAILED: ' + e.message);
-              }
-            " 2>/dev/null | grep -o "CONNECTION_SUCCESS\|CONNECTION_FAILED.*" || echo "CONNECTION_FAILED")
-
-            if [[ "$TEST_CONNECTION" == "CONNECTION_SUCCESS" ]]; then
-              echo "MongoDB connection test successful"
-            else
-              echo "MongoDB connection test failed: $TEST_CONNECTION"
-              echo "Continuing with deployment, but database issues may occur..."
-            fi
-
             echo "Writing environment variables to .env..."
             cat <<EOF > "$APP_DIR/.env"
             NODE_ENV=production
             PORT=3000
-            MONGO_URI=mongodb://${{ secrets.MONGO_USERNAME }}:${{ secrets.MONGO_PASSWORD }}@localhost:27017/SnapCore?authSource=SnapCore
+            MONGO_URI=mongodb://localhost:27017/SnapCore
+            PORT=3000
             CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            REDIRECT_URI=https://snapcore.subspace.site
+            REDIRECT_URI=http://localhost:5173
             TOKEN_ENDPOINT=https://oauth2.googleapis.com/token
             TOKEN_INFO=https://oauth2.googleapis.com/tokeninfo
             AUTH_ENDPOINT=https://accounts.google.com/o/oauth2/v2/auth
@@ -191,6 +95,8 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
             KMS_ALIAS=alias/fediverse_private_key_encryption
+            BACKEND_SERVER_URL=http://localhost:3000
+            FEDIVERSE_SERVER_URL=http://localhost:4000
             USERNAME_INDEX_NAME=UsernameIndex
             EOF
 
