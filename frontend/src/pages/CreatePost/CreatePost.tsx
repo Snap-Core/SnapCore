@@ -58,12 +58,11 @@ export const CreatePost = () => {
     }
 
     try {
-      const newPost = await createPost({
+      await createPost({
         content: text,
         actor: currentUser.username,
         media: media,
       });
-      console.log("Post created:", newPost);
       setSuccess("Your post was uploaded successfully!");
 
       setTimeout(() => {

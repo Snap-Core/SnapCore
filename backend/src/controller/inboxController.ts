@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import fetch from 'node-fetch';
 import { v4 as uuidv4 } from 'uuid';
 import Post from '../types/post';
 import Like from '../types/likes';
@@ -37,7 +36,7 @@ const sendAcceptFollow = async (
 
     const acceptActivity = {
       '@context': 'https://www.w3.org/ns/activitystreams',
-      id: `https://yourdomain.example/activities/${uuidv4()}`,
+      id: `https://snapcore.subspace/activities/${uuidv4()}`,
       type: 'Accept',
       actor: object,
       object: {

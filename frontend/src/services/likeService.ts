@@ -1,4 +1,4 @@
-const BASE_URL = "https://snapcore.subspace.site";
+const BASE_URL = "http://localhost:3000";
 
 //Please utilise this code snippet to get likes by a specific post URL thanks :)
 export async function getLikesByPost(postUrl: string) {

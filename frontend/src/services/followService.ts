@@ -4,7 +4,7 @@ export type FollowActivity = {
   object: string;
 };
 
-const BASE_URL = "https://snapcore.subspace.site";
+const BASE_URL = "http://localhost:3000";
 
 export const followUser = async (actor: string, object: string) => {
   const activity = {
