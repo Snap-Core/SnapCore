@@ -63,8 +63,8 @@ export const createPost = async (req: Request, res: Response) => {
     });
 
     res.status(201).json(savedPost);
-  } catch (err) {
-    res.status(500).json({ message: 'Could not create a post' });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Could not create a post' + JSON.stringify(err?.message) });
   }
 };
 

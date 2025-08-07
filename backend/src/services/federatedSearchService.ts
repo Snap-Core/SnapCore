@@ -3,7 +3,7 @@ import { User } from "../types/user";
 
 export const searchFederatedUsers = async (query: string): Promise<User[]> => {
   try {
-    const knownDomains = ['mastodon.social', 'fosstodon.org', 'hachyderm.io'];
+    const knownDomains = ['mastodon.social', 'fosstodon.org', 'hachyderm.io', 'troet.cafe', 'dair-community.social', 'mastodon.art', 'mstdn.social'];
     const results: User[] = [];
 
     for (const domain of knownDomains) {
