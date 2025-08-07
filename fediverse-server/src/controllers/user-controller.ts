@@ -8,6 +8,8 @@ import { Person } from '../types/person';
 import dotenv from 'dotenv';
 import {FollowPageResponse} from "../types/follow-page-response";
 import {FollowResponse} from "../types/follow-response";
+import {OutboxResponse} from "../types/outbox-response";
+import {OutboxPageResponse} from "../types/outbox-page-response";
 
 dotenv.config();
 const frontendServerUrl = new URL(process.env.FRONTEND_SERVER_URL as string);
@@ -223,4 +225,107 @@ export const getPersonFollowersByUsername = async (req: Request, res: Response) 
     }
   }
   return res.redirect(`${frontendServerUrl}profile/${username}/followers${page ? `?page=${page}` : ''}`);
+}
+
+export const handleInboxPost = async (req: Request, res: Response) => {
+  try {
+    return await requestBackendServer(
+      `inbox`,
+      {
+        method: 'POST',
+        body: JSON.stringify({...req.body, recipient: `${fediverseServerUrl}users/${req.params.username}`}),
+      });
+  } catch (error) {
+    return res.status(500).json('Could not handle inbox post in backend server')
+  }
+}
+
+export const getOutbox = async (req: Request, res: Response) => {
+  // todo get likes?
+  const username = req.params.username;
+  const {page, min_id, max_id} = req.query;
+
+  const personUrl = `${fediverseServerUrl}users/${username}`;
+  const encodedPersonUrl = encodeURIComponent(personUrl);
+
+  const queryParams = []
+
+  if (page) {
+    queryParams.push(`page=true`);
+    if (min_id) {
+      queryParams.push(`min_id=${min_id}`);
+    }
+    if(max_id) {
+      queryParams.push(`max_id=${max_id}`);
+    }
+  }
+
+  try {
+    const response = await requestBackendServer(
+      `posts/${encodedPersonUrl}${page ? `?${queryParams.join('&')}` : ''}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/activity+json',
+        }
+      });
+
+    if (!page)
+    {
+      const {totalItems, oldestPostId} = response;
+
+      return res.status(200).json(getOutboxResponse(personUrl, totalItems, oldestPostId));
+    }
+    console.log('response', response);
+
+    return res.status(200).json(getOutboxPageResponse(personUrl, queryParams, response.posts));
+
+  } catch (error) {
+    return res.status(500).json('Could not handle get outbox in backend server')
+  }
+}
+
+const getOutboxResponse = (
+  personUrl : string,
+  totalItems : number,
+  oldestPostId : string) => {
+
+
+  return {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    id: `${personUrl}/outbox`,
+    type: "OrderedCollection",
+    totalItems: totalItems,
+    first: `${personUrl}/outbox?page=true`,
+    last: `${personUrl}/outbox?min_id=${oldestPostId}?page=true`
+  } as OutboxResponse;
+}
+
+const getOutboxPageResponse = (
+  personUrl : string,
+  queryParams: string[],
+  posts : any[] ) => {
+
+  if (posts.length === 0) {
+    return   {
+      "@context": "https://www.w3.org/ns/activitystreams",
+      id: `${personUrl}/outbox?${queryParams.join('&')}`,
+      type: "OrderedCollectionPage",
+      partOf: `${personUrl}/outbox`,
+      orderedItems: posts
+    } as OutboxPageResponse
+  }
+
+  const maxId : string = posts[posts.length - 1]['_id'];
+  const minId : string = posts[0]['_id'];
+
+  return   {
+    "@context": "https://www.w3.org/ns/activitystreams",
+    id: `${personUrl}/outbox?${queryParams.join('&')}`,
+    type: "OrderedCollectionPage",
+    next: `${personUrl}/outbox?max_id=${maxId}&page=true`,
+    prev: `${personUrl}/outbox?min_id=${minId}&page=true`,
+    partOf: `${personUrl}/outbox`,
+    orderedItems: posts
+  } as OutboxPageResponse;
 }
