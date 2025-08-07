@@ -11,6 +11,7 @@ import { getFollowersList, getFollowingList } from "../../services/followService
 import { useToast } from "../../components/ToastContext";
 import { fetcher } from "../../utils/fetcher";
 import { useProfilePicHandler } from "../../hooks/useProfilePicHandler";
+import { buildUserUrl, buildProfilePicUrl } from "../../config/urls";
 
 export const UserProfile = () => {
     const { username: routeUsername } = useParams<{ username: string }>();
@@ -100,10 +101,10 @@ export const UserProfile = () => {
     }, [routeUsername, currentUser?.activated, showToast]);
 
     const fetchProfileFollowCounts = async () => {
-        if (!userProfile || isOwnProfile || isExternalUser) return;
+        if (!userProfile || !userProfile.username || isOwnProfile || isExternalUser) return;
 
         try {
-            const profileUser = `http://localhost:3000/users/${userProfile.username}`;
+            const profileUser = buildUserUrl(userProfile.username);
             const followingList = await getFollowingList(profileUser);
             const followerList = await getFollowersList(profileUser);
 
@@ -235,7 +236,7 @@ export const UserProfile = () => {
             <div className="user-header">
                 <div className="profile-pic-wrapper">
                     <img
-                        src={`http://localhost:3000${newProfilePic || userProfile.profilePic || genericProfilePic}`}
+                        src={buildProfilePicUrl(newProfilePic || userProfile.profilePic || genericProfilePic)}
                         alt="Profile"
                         className="profile-pic"
                     />
@@ -313,9 +314,6 @@ export const UserProfile = () => {
                     <Feed username={userProfile.username} />
                 ) : (
                     <Feed username={userProfile.username} />
-                    // <p style={{ color: '#666', fontStyle: 'italic' }}>
-                    //     Posts from federated users are not displayed in this demo.
-                    // </p>
                 )}
             </div>
         </div>

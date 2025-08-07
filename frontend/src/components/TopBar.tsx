@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { LogoutButton } from "./LogoutButton";
 import { GoogleLoginButton } from "./GoogleLoginButton";
-import genericProfilePic from "./../assets/generic-profile-p.jpg"
+import genericProfilePic from "./../assets/generic-profile-p.jpg";
+import { buildProfilePicUrl } from "../config/urls";
 
 export const TopBar = () => {
   const { user, loading } = useAuth();
@@ -34,7 +35,7 @@ export const TopBar = () => {
           <>
             <Link to={`/profile/${user.username ?? 'user-activation'}`}>
               <img
-                src={`http://localhost:3000${user.profilePic || genericProfilePic}`}
+                src={buildProfilePicUrl(user.profilePic || genericProfilePic)}
                 alt={user.displayName || user.username}
                 className="avatar"
               />

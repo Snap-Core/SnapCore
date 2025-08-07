@@ -178,7 +178,6 @@ export const searchExternalUsers = async (req: Request, res: Response) => {
         }
       }
     } catch (error) {
-      console.log(`Failed to search ${domain} for ${query}:`, error);
     }
   }
 
@@ -189,8 +188,6 @@ export const searchExternalUsers = async (req: Request, res: Response) => {
 
 export const getUserOutbox = async (req: Request, res: Response) => {
   const { outbox } = req.query as { outbox: string };
-
-  console.log("");
 
   if (!outbox) {
     return res.status(400).json({ error: 'Invalid outbox request' });

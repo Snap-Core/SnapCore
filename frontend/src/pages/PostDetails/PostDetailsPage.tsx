@@ -35,28 +35,14 @@ export const PostDetailsPage = () => {
 
   const handleLike = () => {
     if (!post) return;
-    // setPost({
-    //   ...post,
-    //   liked: !post.liked,
-    //   likes: post.liked ? (post.likes ?? 0) - 1 : (post.likes ?? 0) + 1,
-    // });
   };
 
   const handlePostComment = async () => {
-    console.log(
-      "Posting comment:",
-      commentText,
-      "by user:",
-      currentUser,
-      "on post:",
-      post?.id
-    );
-
     if (!commentText.trim() || !currentUser || !post) return;
 
     const newComment = await createComment({
       content: commentText.trim(),
-      actor: currentUser.username || "", // must be a full ActivityPub actor ID
+      actor: currentUser.username || "", 
       inReplyTo: post.id,
     });
 
@@ -69,7 +55,6 @@ export const PostDetailsPage = () => {
 
   return (
     <div className="layout-container">
-      {/* Left sidebar (optional future use) */}
       <div className="left-sidebar">
         <div className="user-card">
           <img
@@ -102,10 +87,8 @@ export const PostDetailsPage = () => {
         </div>
       </div>
 
-      {/* Center main content */}
       <div className="main-content">
         <div className="post-details-container">
-          {/* Main post */}
           <div className="main-post-card">
             <div className="post-header">
               <img
@@ -149,12 +132,8 @@ export const PostDetailsPage = () => {
             </div>
           </div>
 
-          {/* Divider */}
-          {/* <hr className="post-divider" /> */}
 
-          {/* Comment Section */}
           <div className="comments-section">
-            {/* <h4 className="comments-heading">{comments.length} Comments</h4> */}
 
             {comments.length === 0 && (
               <p className="no-comments">No comments yet.</p>
@@ -181,7 +160,6 @@ export const PostDetailsPage = () => {
         </div>
       </div>
 
-      {/* Right panel */}
       <div className="right-panel"></div>
     </div>
   );

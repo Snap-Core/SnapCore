@@ -1,9 +1,7 @@
 import type { PostComment } from "../types/PostComment";
 import { fetcher } from "../utils/fetcher";
+import { URLS } from "../config/urls";
 
-const BASE_MEDIA_URL = "http://localhost:3000";
-
-// --- ActivityPub Types ---
 
 type RawActivityPubCollection = {
   "@context": string;
@@ -37,7 +35,6 @@ type RawActivityPubNote = {
   };
 };
 
-// --- Normalize to UI-friendly PostComment format ---
 
 const transformActivityPubNote = (note: RawActivityPubNote): PostComment => {
   const username = note.attributedTo.split("/").pop() || "unknown";
@@ -52,7 +49,7 @@ const transformActivityPubNote = (note: RawActivityPubNote): PostComment => {
           {
             url: note.attachment.url.startsWith("http")
               ? note.attachment.url
-              : `${BASE_MEDIA_URL}${note.attachment.url.trim()}`,
+              : `${URLS.BACKEND_BASE}${note.attachment.url.trim()}`,
             type: note.attachment.mediaType.startsWith("image") ? "image" : "video",
           },
         ]
@@ -65,14 +62,12 @@ const transformActivityPubNote = (note: RawActivityPubNote): PostComment => {
   };
 };
 
-// --- Fetch all comments ---
 
 export const getAllComments = async (): Promise<PostComment[]> => {
   const data: RawActivityPubCollection = await fetcher(`/comments`);
   return data.orderedItems.map((item) => transformActivityPubNote(item.object));
 };
 
-// --- Fetch comments for a given object (e.g. post) ---
 
 export const getCommentsForObject = async (inReplyToUrl: string): Promise<PostComment[]> => {
   const encoded = encodeURIComponent(inReplyToUrl);
@@ -80,7 +75,6 @@ export const getCommentsForObject = async (inReplyToUrl: string): Promise<PostCo
   return data.orderedItems.map((item) => transformActivityPubNote(item.object));
 };
 
-// --- Fetch comments by actor ---
 
 export const getCommentsByActor = async (actorUrl: string): Promise<PostComment[]> => {
   const encoded = encodeURIComponent(actorUrl);
@@ -88,7 +82,6 @@ export const getCommentsByActor = async (actorUrl: string): Promise<PostComment[
   return data.orderedItems.map((item) => transformActivityPubNote(item.object));
 };
 
-// --- Post a new comment ---
 
 export const createComment = async (params: {
   content: string;

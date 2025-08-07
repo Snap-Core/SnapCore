@@ -7,11 +7,13 @@ import genericProfilePic from "../../assets/generic-profile-p.jpg";
 import { getAllPosts, getPostsByActor } from "../../services/postService";
 import { useAuth } from "../../auth/useAuth";
 import { v4 as uuidv4 } from "uuid";
-import { likePost, unlikePost } from "../../services/likeService";
 import { useFollow } from "../../components/FollowContext";
 import { useToast } from "../../components/ToastContext";
 import { useNavigate } from "react-router-dom";
+import { PostOriginBadge } from "../../components/PostOriginBadge";
+import { useLikes } from "../../hooks/useLikes";
 import DOMPurify from "dompurify";
+import { buildUserUrl } from "../../config/urls";
 
 type FeedProps = {
   username?: string;
@@ -29,37 +31,35 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
   const { followedUsers, toggleFollow } = useFollow();
   const isFollowing = (username: string) => followedUsers.has(username);
   const { showToast } = useToast();
-
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+  const likesHook = useLikes();
+  
   useEffect(() => {
     setLoading(true);
     setError(false);
 
     if (username) {
-      getPostsByActor(username)
+      getPostsByActor(username, currentUser?.username || "")
         .then((fetchedPosts) => {
           setPosts(fetchedPosts);
           setLoading(false);
         })
-        .catch((err) => {
+        .catch(() => {
           setLoading(false);
           setError(true);
         });
     } else {
-      getAllPosts(username || currentUser?.username || "")
+      getAllPosts(currentUser?.username || "")
         .then((fetchedPosts) => {
-          const filteredPosts = username
-            ? fetchedPosts.filter((post) => post.user?.username === username)
-            : fetchedPosts;
-          setPosts(filteredPosts);
+          setPosts(fetchedPosts);
           setLoading(false);
         })
-        .catch((err) => {
+        .catch(() => {
           setLoading(false);
           setError(true);
         });
     }
-  }, [currentUser?.username, reloadKey]);
+  }, [currentUser?.username, reloadKey, username]);
 
   useEffect(() => {
     if (showComments) {
@@ -77,14 +77,11 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
 
   const handleLike = async (postId: string) => {
     const actorUrl = currentUser?.username
-      ? `https://mastinstatok.local/users/${currentUser.username}`
-      : import.meta.env.MODE === "development"
-      ? "https://mastinstatok.local/users/test-actor"
-      : null;
+      ? buildUserUrl(currentUser.username):
+      null;
 
     if (!actorUrl) {
-      showToast(`Like toggle aborted: missing actor URL`, "warning");
-
+      showToast(`Please log in to like posts`, "warning");
       return;
     }
 
@@ -93,31 +90,48 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
 
     if (!post || !objectUrl) {
       showToast(
-        `Like toggle failed: missing post or activityPubObject.id`,
+        `Cannot like this post: missing post information`,
         "error"
       );
       return;
     }
 
     const alreadyLiked = post.likes?.some((like) => like.actor === actorUrl);
+    
+    setPosts((prevPosts) =>
+      prevPosts.map((p) =>
+        p.id !== postId
+          ? p
+          : {
+              ...p,
+              liked: !alreadyLiked,
+              likes: alreadyLiked
+                ? p.likes?.filter((like) => like.actor !== actorUrl) ?? []
+                : [
+                    ...(p.likes ?? []),
+                    {
+                      actor: actorUrl,
+                      object: objectUrl,
+                      activityPubObject: {},
+                      createdAt: new Date().toISOString(),
+                    },
+                  ],
+            }
+      )
+    );
 
-    try {
-      if (alreadyLiked) {
-        await unlikePost({ actor: actorUrl, object: objectUrl });
-      } else {
-        await likePost({ actor: actorUrl, object: objectUrl });
-      }
-
+    const result = await likesHook.handleLike(actorUrl, objectUrl, alreadyLiked);
+    
+    if (!result.success) {
       setPosts((prevPosts) =>
         prevPosts.map((p) =>
           p.id !== postId
             ? p
             : {
                 ...p,
-                liked: !alreadyLiked,
+                liked: alreadyLiked, 
                 likes: alreadyLiked
-                  ? p.likes?.filter((like) => like.actor !== actorUrl) ?? []
-                  : [
+                  ? [
                       ...(p.likes ?? []),
                       {
                         actor: actorUrl,
@@ -125,19 +139,15 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
                         activityPubObject: {},
                         createdAt: new Date().toISOString(),
                       },
-                    ],
+                    ] 
+                  : p.likes?.filter((like) => like.actor !== actorUrl) ?? [], 
               }
         )
       );
-    } catch (err) {
-      console.error("Like toggle error:", err);
-      showToast(`Like toggle error`, "error");
     }
   };
 
   const openComments = (post: Post) => {
-    // setSelectedPost(post);
-    // setShowComments(true);
     navigate(`/post/${post.id}`);
   };
 
@@ -190,6 +200,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
                 <Link to={`/profile/${post.user?.username}`} className="post-username">
                   {post.user?.username}
                 </Link>
+                <PostOriginBadge postUrl={post.activityPubObject?.id || ""} />
                 {post.user?.username !== currentUser?.username && (
                   <span
                     className="follow-text"
@@ -234,7 +245,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
 
           <div className="post-actions">
             <button onClick={() => handleLike(post.id)} className="icon-button">
-              {post.liked ? "❤️" : "🤍"} {post.likes?.length || 0}
+              {post.liked ? "❤️" : "🤍"} {post.likesCount || 0}
             </button>
             <button onClick={() => openComments(post)} className="icon-button">
               💬 {post.comments?.length || 0}

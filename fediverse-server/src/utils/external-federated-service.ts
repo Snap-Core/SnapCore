@@ -7,34 +7,46 @@ export const getExternalServer = async (
   path : string = '',
   requestingActorUrl : URL | null = null,
   requestingActorEncryptedPrivateKey : string | null = null,
-  requiresHttpSignature : boolean = false) => {
+  requiresHttpSignature : boolean = false,
+  method : string = 'GET',
+  body : any = null) => {
   let headers : Record<string, string> = {
     Accept: 'application/activity+json, application/id+json',
     Host: baseUrl.toString(),
     Date: new Date().toISOString()
   };
 
+  if (method === 'POST' && body) {
+    headers['Content-Type'] = 'application/activity+json';
+  }
+
   if (requiresHttpSignature) {
     if (!requestingActorUrl || !requestingActorEncryptedPrivateKey) {
-      // todo: throw error / do not allow
     }
 
     const privateKey: string = await decryptPrivateKey(requestingActorEncryptedPrivateKey!)
 
     headers = signRequest(
       new URL(baseUrl, path),
-      'GET',
+      method,
       headers,
       privateKey,
-      requestingActorUrl!
+      requestingActorUrl!,
+      body
     );
   }
 
-  return await fetch(`${baseUrl + path}`, {
+  const fetchOptions: any = {
+    method: method,
     headers: headers
-  });
+  };
 
-  // todo: add toJson before return and throw error here?
+  if (method === 'POST' && body) {
+    fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
+  }
+
+  return await fetch(`${baseUrl + path}`, fetchOptions);
+
 }
 
 export const signRequest = (
@@ -42,9 +54,17 @@ export const signRequest = (
   method: string,
   headers: Record<string, string>,
   privateKeyPem: string,
-  actorUrl: URL
+  actorUrl: URL,
+  body?: any
 ): Record<string, string> => {
   const signingHeaders = ['(request-target)', 'host', 'date'];
+  
+  if (method === 'POST' && body) {
+    const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
+    const digest = crypto.createHash('sha256').update(bodyString).digest('base64');
+    headers['Digest'] = `SHA-256=${digest}`;
+    signingHeaders.push('digest');
+  }
 
   const requestTarget = `${method.toLowerCase()} ${url.pathname}`;
 
