@@ -29,7 +29,7 @@ jobs:
       - name: Copy files to EC2 with scp
         uses: appleboy/scp-action@v1
         with:
-          host: ${{ vars.EC2_HOST }}
+          host: ${{ vars.EC2_FEDIVERSE_HOST }}
           username: ${{ vars.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
@@ -40,7 +40,7 @@ jobs:
       - name: Run remote commands on EC2 and Configure Nginx
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ vars.EC2_HOST }}
+          host: ${{ vars.EC2_FEDIVERSE_HOST }}
           username: ${{ vars.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
