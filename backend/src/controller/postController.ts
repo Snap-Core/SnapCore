@@ -9,7 +9,7 @@ const generateActivityPubNote = (
   mediaUrl?: string,
   mediaType?: string
 ) => {
-  const id = `https://mastinstatok.local/posts/${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const id = `https://snapcore.subspace/posts/${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const note: any = {
     "@context": "https://www.w3.org/ns/activitystreams",
     type: "Create",

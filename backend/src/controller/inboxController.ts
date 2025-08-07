@@ -37,7 +37,7 @@ const sendAcceptFollow = async (
 
     const acceptActivity = {
       '@context': 'https://www.w3.org/ns/activitystreams',
-      id: `https://snapcore.subspace.site/api/activities/${uuidv4()}`,
+      id: `https://snapcore.subspace/activities/${uuidv4()}`,
       type: 'Accept',
       actor: object,
       object: {
