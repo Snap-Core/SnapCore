@@ -74,7 +74,7 @@ export const UserProfile = () => {
         if (!userProfile || isOwnProfile) return;
 
         try {
-            const profileUser = `https://yourdomain.com/users/${userProfile.username}`;
+            const profileUser = `https://snapcore.subspace.site/users/${userProfile.username}`;
             const followingList = await getFollowingList(profileUser);
             const followerList = await getFollowersList(profileUser);
 
