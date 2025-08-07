@@ -18,7 +18,7 @@ router.post("/logout", requireAuth, logout);
 
 router.patch("/", requireAuth, updateUserController);
 
-router.get('/external', getExternalUserFromUsername);
+router.get('/external', requireAuth, getExternalUserFromUsername);
 
 router.get("/search", searchUsers);
 
