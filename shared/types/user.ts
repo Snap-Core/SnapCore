@@ -10,4 +10,6 @@ export interface User {
   following?: string;
   publicKey: string;
   encryptedPrivateKey?: string;
+  domain?: string;
+  isFederated?: boolean;
 }

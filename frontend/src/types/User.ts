@@ -9,3 +9,13 @@ export type User = {
   following?: number;
   activated?: boolean;
 };
+
+export interface FederatedUser {
+  username: string;
+  domain: string;
+  displayName?: string;
+  summary?: string;
+  profilePic?: string;
+  actorUrl?: string;
+  isFederated: boolean;
+}

@@ -23,6 +23,7 @@ export const App = () => (
               <Route path="/feed" element={<Feed />} />
               <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
               <Route path="/profile/:username" element={<UserProfile />} />
+              <Route path="/user-activation" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
               <Route path="*" element={<PageNotFound />} />
             </Routes>
           </div>

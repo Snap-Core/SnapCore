@@ -4,23 +4,11 @@ import { GoogleUserInfo } from "../types/AuthTypes";
 import dotenv from 'dotenv';
 import {generateKeyPair} from "../utils/key-pair-generation";
 import Fuse from 'fuse.js';
+import {getDynamoClient} from "../middleware/dynamoDbClient";
 
 dotenv.config();
 
-let client: DynamoDBClient | null = null;
-function getDynamoClient() {
-  if (!client) {
-    client = new DynamoDBClient({
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-        sessionToken: process.env.AWS_SESSION_TOKEN || "",
-      },
-      region: process.env.AWS_REGION || "af-south-1"
-    });
-  }
-  return client;
-}
+let client: DynamoDBClient | null = getDynamoClient();
 
 const tableName = process.env.DYNAMODB_TABLE || "accounts";
 
@@ -60,12 +48,15 @@ export async function createUserIfNotExists(user: GoogleUserInfo) {
 export async function findUserByUsername(username: string) {
   const cmd = new ScanCommand({
     TableName: tableName,
-    FilterExpression: "#un = :username_lowercase",
-    ExpressionAttributeNames: { "#un": "username_lowercase" },
-    ExpressionAttributeValues: { ":username_lowercase": username.toLowerCase() },
+    FilterExpression: "attribute_exists(username)",
   });
   const result = await getDynamoClient().send(cmd);
-  return result.Items && result.Items.length > 0 ? result.Items[0] : null;
+  
+  const user = (result.Items || []).find(item => 
+    item.username && item.username.toLowerCase() === username.toLowerCase()
+  );
+  
+  return user || null;
 }
 
 export async function updateUser(
@@ -109,16 +100,14 @@ export async function updateUser(
     exprAttrValues[":displayName"] = updates.displayName;
     hasDisplayName = true;
   }
+  
   if (updates.username) {
     updateExpr.push("#un = :username");
     exprAttrNames["#un"] = "username";
     exprAttrValues[":username"] = updates.username;
     hasUsername = true;
-
-    updateExpr.push("#un = :username_lowercase");
-    exprAttrNames["#un"] = "username_lowercase";
-    exprAttrValues[":username_lowercase"] = updates.username.toLowerCase();
   }
+  
   if (updates.summary) {
     updateExpr.push("#sm = :summary");
     exprAttrNames["#sm"] = "summary";
@@ -151,7 +140,12 @@ export async function updateUser(
 }
 
 export async function scanUsers() {
-  const cmd = new ScanCommand({ TableName: tableName });
+  const cmd = new ScanCommand({ 
+    TableName: tableName,
+    FilterExpression: "#act = :activated",
+    ExpressionAttributeNames: { "#act": "activated" },
+    ExpressionAttributeValues: { ":activated": true }
+  });
   const result = await getDynamoClient().send(cmd);
   return (result.Items || []).map(({ id, email, name, encryptedPrivateKey, publicKey, ...rest }) => rest);
 }
@@ -159,7 +153,9 @@ export async function scanUsers() {
 export async function searchUsersByQuery(query: string, limit: number = 20) {
   const allUsersCmd = new ScanCommand({
     TableName: tableName,
-    FilterExpression: "attribute_exists(username) AND attribute_exists(displayName)"
+    FilterExpression: "attribute_exists(username) AND attribute_exists(displayName) AND #act = :activated",
+    ExpressionAttributeNames: { "#act": "activated" },
+    ExpressionAttributeValues: { ":activated": true }
   });
   
   const allUsersResult = await getDynamoClient().send(allUsersCmd);
