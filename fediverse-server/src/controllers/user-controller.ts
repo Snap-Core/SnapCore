@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import {getPersonFromUser, getUserFromPerson} from '../utils/convert-activity-pub-objects';
+import {User} from "../types/user";
 import {requestBackendServer} from "../utils/backend-service";
 import {getExternalServer} from "../utils/external-federated-service";
 import {WebfingerResponse} from "../types/webfinger-response";
 import { Person } from '../types/person';
 import dotenv from 'dotenv';
-import { User } from '../types/user';
 
 dotenv.config();
 const frontendServerUrl = new URL(process.env.FRONTEND_SERVER_URL as string);

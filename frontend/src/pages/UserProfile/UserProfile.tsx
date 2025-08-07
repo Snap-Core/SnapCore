@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import './UserProfile.css';
 import { UserInfoInput } from "../../components/UserInfoInput";
 import genericProfilePic from '../../assets/generic-profile-p.jpg';
@@ -28,6 +28,7 @@ export const UserProfile = () => {
     const [profileFollowingCount, setProfileFollowingCount] = useState(0);
     const pluralize = (count: number, noun: string) => `${count} ${noun}${count !== 1 ? "s" : ""}`;
     const { showToast } = useToast();
+     const hasShownToast = useRef(false);
 
     const isOwnProfile = routeUsername === currentUser?.username;
 
@@ -83,6 +84,10 @@ export const UserProfile = () => {
                 }
             } catch (error) {
                 console.error("Failed to fetch user profile:", error);
+                 if (!hasShownToast.current) {
+                    showToast(`Failed to fetch user profile: ${routeUsername}`, "error");
+                    hasShownToast.current = true;
+                }
                 setUserProfile(null);
                 showToast("Failed to load user profile", "error");
             } finally {
@@ -97,7 +102,7 @@ export const UserProfile = () => {
         if (!userProfile || isOwnProfile || isExternalUser) return;
 
         try {
-            const profileUser = `https://yourdomain.com/users/${userProfile.username}`;
+            const profileUser = `https://snapcore.subspace.site/users/${userProfile.username}`;
             const followingList = await getFollowingList(profileUser);
             const followerList = await getFollowersList(profileUser);
 
