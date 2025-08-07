@@ -34,7 +34,7 @@ export const TopBar = () => {
           <>
             <Link to={`/profile/${user.username ?? 'user-activation'}`}>
               <img
-                src={user.profilePic || genericProfilePic}
+                src={`http://localhost:3000${user.profilePic || genericProfilePic}`}
                 alt={user.displayName || user.username}
                 className="avatar"
               />
@@ -42,6 +42,7 @@ export const TopBar = () => {
             <span style={{ marginRight: 8, fontSize: '14px' }}>
               {user.displayName || user.username}
             </span>
+            
             <LogoutButton />
           </>
         ) : (

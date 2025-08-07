@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { fetcher } from "../utils/fetcher";
 import "./UserInfoInput.css";
+import { useProfilePicHandler } from "../hooks/useProfilePicHandler";
+import { useAuth } from "../auth/useAuth";
 
 const limits = {
   username: { min: 3, max: 20 },
@@ -11,7 +13,7 @@ const limits = {
 type UserInfoInputProps = {
   userId: string;
   onClose: () => void;
-  onSubmit: (fields: { username: string; displayName: string; summary: string }) => void;
+  onSubmit: (fields: { username: string; displayName: string; summary: string; profilePic: string }) => void;
 };
 
 export const UserInfoInput = ({ userId, onClose, onSubmit }: UserInfoInputProps) => {
@@ -19,9 +21,11 @@ export const UserInfoInput = ({ userId, onClose, onSubmit }: UserInfoInputProps)
     username: "",
     displayName: "",
     summary: "",
+    profilePic: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { user: currentUser } = useAuth();
 
   function validate() {
     if (
@@ -71,7 +75,7 @@ export const UserInfoInput = ({ userId, onClose, onSubmit }: UserInfoInputProps)
         method: "PATCH",
         body: { id: userId, ...fields },
       });
-      onSubmit({fields, ...user});
+      onSubmit({ fields, ...user });
       onClose();
     } catch (apiErr: unknown) {
       if (typeof apiErr === "object" && apiErr !== null) {
@@ -84,6 +88,24 @@ export const UserInfoInput = ({ userId, onClose, onSubmit }: UserInfoInputProps)
       setLoading(false);
     }
   }
+
+  const {
+    profilePic,
+    handleProfilePicChange,
+    clearProfilePic
+  } = useProfilePicHandler(
+    (_file, url) => {
+      setFields(prev => ({ ...prev, profilePic: url }));
+    },
+    setError
+  );
+
+  const handleRemoveImage = () => {
+    clearProfilePic();
+    setFields({ ...fields, profilePic: "" });
+    setError("");
+  };
+
 
   return (
     <section>
@@ -132,6 +154,38 @@ export const UserInfoInput = ({ userId, onClose, onSubmit }: UserInfoInputProps)
               required
             />
           </div>
+          {currentUser?.activated && (
+            <>
+              <div className="file-inputs">
+                <label className="file-label">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    onChange={handleProfilePicChange}
+                  />
+                  Add Profile Picture
+                </label>
+              </div>
+
+              {fields.profilePic && profilePic && (
+                <div className="preview-list">
+                  <span className="preview-item">
+                    {profilePic.split("/").pop()}
+                    <button
+                      type="button"
+                      className="remove-btn"
+                      onClick={handleRemoveImage}
+                      title="Remove"
+                    >
+                      ×
+                    </button>
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+
           {error && <div className="error">{error}</div>}
           <div className="actions">
             <button type="submit" disabled={loading}>Save</button>

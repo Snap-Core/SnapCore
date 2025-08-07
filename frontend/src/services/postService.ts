@@ -2,7 +2,7 @@ import type { Like, Post } from "../types/Post";
 import { fetcher } from "../utils/fetcher";
 import { getLikesByPost } from "./likeService";
 
-const BASE_MEDIA_URL = "http://localhost:3000";
+const BASE_URL = "http://localhost:3000";
 
 type RawPost = {
   _id: string;
@@ -24,14 +24,12 @@ export const getAllPosts = async (
   const encodedActor = encodeURIComponent(currentUserActor);
 
   const rawPosts: RawPost[] = await fetcher(`/posts?actor=${encodedActor}`);
-  // const rawPosts: RawPost[] = await fetcher(`/posts`);
 
   const posts = await Promise.all(
     rawPosts.map(async (raw): Promise<Post | null> => {
       const postUrl = raw.activityPubObject?.id;
       if (!postUrl) {
         console.warn("Skipping post with missing activityPubObject:", raw._id);
-
         return null;
       }
 
@@ -42,17 +40,19 @@ export const getAllPosts = async (
         console.error(`Failed to fetch likes for post ${postUrl}`, error);
       }
 
-      const liked = likes.some((like) => like.actor.endsWith(currentUserActor));
+      const liked = likes.some((like) =>
+        like.actor.endsWith(currentUserActor)
+      );
 
       const media = Array.isArray(raw.media)
         ? raw.media.map((item: any) => ({
-            url: `${BASE_MEDIA_URL}${item.url.trim()}`,
+            url: `${BASE_URL}${item.url.trim()}`,
             type: item.type,
           }))
         : raw.mediaUrl
         ? [
             {
-              url: `${BASE_MEDIA_URL}${raw.mediaUrl.trim()}`,
+              url: `${BASE_URL}${raw.mediaUrl.trim()}`,
               type: raw.mediaType || "image",
             },
           ]
@@ -60,6 +60,17 @@ export const getAllPosts = async (
 
       const username =
         typeof raw.actor === "string" ? raw.actor.split("/").pop() : "unknown";
+
+       let userProfilePic: string | undefined = undefined;
+
+      try {
+        const userData = await fetcher(`/users/${username}`);
+        if (userData?.profilePic) {
+          userProfilePic = `${BASE_URL}${userData.profilePic}`;
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch profile pic for ${username}`, err);
+      }
 
       return {
         id: raw._id,
@@ -72,7 +83,7 @@ export const getAllPosts = async (
         user: {
           username,
           displayName: username,
-          profilePic: undefined,
+          profilePic: userProfilePic,
         },
         activityPubObject: raw.activityPubObject!,
       };
@@ -81,6 +92,7 @@ export const getAllPosts = async (
 
   return posts.filter((post): post is Post => post !== null);
 };
+
 
 export const getPostsByActor = async (actorUrl: string) => {
   const encoded = encodeURIComponent(actorUrl);
@@ -112,19 +124,21 @@ export const createPost = async (params: {
   });
 
   const raw: RawPost = await response;
-
+  let user = await fetcher(`/users/me`);
+  const profilePicUrl = `http://localhost:3000${user.user.profilePic}`;
+  
   const newPost: Post = {
     id: raw._id,
     text: raw.content,
     media: Array.isArray(raw.media)
       ? raw.media.map((item: any) => ({
-          url: `${BASE_MEDIA_URL}${item.url.trim()}`,
+          url: `${BASE_URL}${item.url.trim()}`,
           type: item.type,
         }))
       : raw.mediaUrl
       ? [
           {
-            url: `${BASE_MEDIA_URL}${raw.mediaUrl.trim()}`,
+            url: `${BASE_URL}${raw.mediaUrl.trim()}`,
             type: raw.mediaType || "image",
           },
         ]
@@ -138,7 +152,7 @@ export const createPost = async (params: {
         typeof raw.actor === "string" ? raw.actor.split("/").pop()! : "unknown",
       displayName:
         typeof raw.actor === "string" ? raw.actor.split("/").pop()! : "Unknown",
-      profilePic: undefined,
+      profilePic: profilePicUrl,
     },
   };
 

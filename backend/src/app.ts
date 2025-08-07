@@ -61,7 +61,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/posts', postRouter);
 app.use('/inbox', inboxRouter);
-app.use('/inbox', followRouter);
+app.use('/api/follow', followRouter);
 app.use('/api/likes', fedelikeRouter);
 app.use('/api/likes', localLikeRouter);
 app.use('/api/users', userRouter);

@@ -13,7 +13,7 @@ export const followUser = async (actor: string, object: string) => {
     object,
   };
 
-  const res = await fetch(`${BASE_URL}/inbox`, {
+  const res = await fetch(`${BASE_URL}/api/follow`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(activity),
@@ -29,7 +29,7 @@ export const followUser = async (actor: string, object: string) => {
 };
 
 export const unfollowUser = async (actor: string, object: string) => {
-  const res = await fetch(`${BASE_URL}/inbox`, {
+  const res = await fetch(`${BASE_URL}/api/follow`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -50,7 +50,7 @@ export const unfollowUser = async (actor: string, object: string) => {
 };
 
 export const getFollows = async () => {
-  const res = await fetch(`${BASE_URL}/inbox`);
+  const res = await fetch(`${BASE_URL}/api/follow`);
   if (!res.ok) throw new Error("Failed to fetch follows");
   const follows = await res.json();
   console.log(follows);
@@ -60,7 +60,7 @@ export const getFollowersActors = async (
   username: string
 ): Promise<string[]> => {
   const encodedActor = encodeURIComponent(username);
-  const response = await fetch(`${BASE_URL}/inbox/${encodedActor}/actors`);
+  const response = await fetch(`${BASE_URL}/api/follow/${encodedActor}/actors`);
   if (!response.ok) throw new Error("Failed to fetch followers list");
   return await response.json();
 };
@@ -69,7 +69,7 @@ export const getFollowersCount = async (
   username: string
 ): Promise<string[]> => {
   const encodedActor = encodeURIComponent(username);
-  const response = await fetch(`${BASE_URL}/inbox/${encodedActor}/count`);
+  const response = await fetch(`${BASE_URL}/api/follow/${encodedActor}/count`);
   if (!response.ok) throw new Error("Failed to fetch followers list");
   return await response.json();
 };
@@ -78,7 +78,7 @@ export const getFollowersList = async (
   username: string
 ): Promise<FollowActivity[]> => {
   const encodedActor = encodeURIComponent(username);
-  const response = await fetch(`${BASE_URL}/inbox/${encodedActor}/followers`);
+  const response = await fetch(`${BASE_URL}/api/follow/${encodedActor}/followers`);
   if (!response.ok) throw new Error("Failed to fetch followers list");
   return await response.json();
 };
@@ -87,7 +87,7 @@ export const getFollowingList = async (
   username: string
 ): Promise<FollowActivity[]> => {
   const encodedActor = encodeURIComponent(username);
-  const response = await fetch(`${BASE_URL}/inbox/${encodedActor}/following`);
+  const response = await fetch(`${BASE_URL}/api/follow/${encodedActor}/following`);
   if (!response.ok) throw new Error("Failed to fetch following list");
   return await response.json();
 };
@@ -97,7 +97,7 @@ export const getFollowingCount = async (
 ): Promise<string[]> => {
   const encodedActor = encodeURIComponent(username);
   const response = await fetch(
-    `${BASE_URL}/inbox/${encodedActor}/following/count`
+    `${BASE_URL}/api/follow/${encodedActor}/following/count`
   );
   if (!response.ok) throw new Error("Failed to fetch following list");
   return await response.json();
