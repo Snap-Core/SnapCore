@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import {User} from "../../../shared/types/user";
 import {requestBackendServer} from "../utils/backend-service";
 import dotenv from 'dotenv';
-import { Community } from '../../../shared/types/community';
+import { User } from '../types/user';
+import { Community } from '../types/community';
 
 dotenv.config();
 

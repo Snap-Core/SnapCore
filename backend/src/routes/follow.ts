@@ -29,15 +29,15 @@ router.get("/:userUrl", async (req, res) => {
   }
 });
 
-// Followers
-router.get("/:userUrl/count", async (req, res) => {
+
+router.get("/:userUrl/followers/count", async (req, res) => {
   try {
     const rawParam = req.params.userUrl;
     const userUrl = decodeURIComponent(rawParam);
 
     const followerCount = await Follow.countDocuments({ object: userUrl });
 
-    res.json({ user: userUrl, followerCount });
+    res.json({ user: userUrl, count: followerCount });
   } catch (err) {
     console.error("Error counting followers for user:", err);
     res.status(500).json({ message: "Error counting followers for user" });
@@ -60,8 +60,24 @@ router.get('/:userUrl/followers', async (req, res) => {
   try {
     const rawParam = req.params.userUrl;
     const userUrl = decodeURIComponent(rawParam);
+    const page = Number(req.query.page);
 
-    const follows = await Follow.find({ object: userUrl });
+    const limit = 10;
+    let skip : number = 0;
+
+    if (page && page > 0) {
+      skip = limit * (page - 1);
+    }
+
+    const follows = page
+    ? await Follow.find({ object: userUrl })
+      .sort({ createdAt: 1 })
+      .skip(skip)
+      .limit(limit)
+      .exec()
+    : await Follow.find({ object: userUrl })
+      .sort({ createdAt: 1 })
+      .exec();
 
     res.json(follows);
   } catch (err) {
@@ -70,13 +86,29 @@ router.get('/:userUrl/followers', async (req, res) => {
   }
 });
 
-// Following
+
 router.get('/:userUrl/following', async (req, res) => {
   try {
     const rawParam = req.params.userUrl;
     const userUrl = decodeURIComponent(rawParam);
+    const page = Number(req.query.page);
 
-    const follows = await Follow.find({ actor: userUrl });
+    const limit = 10;
+    let skip : number = 0;
+
+    if (page && page > 0) {
+      skip = limit * (page - 1);
+    }
+
+    const follows = page
+        ? await Follow.find({ actor: userUrl })
+          .sort({ createdAt: 1 })
+          .skip(skip)
+          .limit(limit)
+          .exec()
+        : await Follow.find({ actor: userUrl })
+          .sort({ createdAt: 1 })
+          .exec();
 
     res.json(follows);
   } catch (err) {
@@ -89,7 +121,7 @@ router.get('/:userUrl/following/count', async (req, res) => {
   try {
     const userUrl = decodeURIComponent(req.params.userUrl);
     const followingCount = await Follow.countDocuments({ actor: userUrl });
-    res.json({ user: userUrl, followingCount });
+    res.json({ user: userUrl, count: followingCount });
   } catch (err) {
     console.error('Error counting following:', err);
     res.status(500).json({ message: 'Error counting following' });

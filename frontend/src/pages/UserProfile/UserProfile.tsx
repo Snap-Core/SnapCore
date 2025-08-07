@@ -20,6 +20,7 @@ export const UserProfile = () => {
     const [loading, setLoading] = useState(true);
     const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
     const [showUserSetup, setShowUserSetup] = useState(false);
+    const [isExternalUser, setIsExternalUser] = useState(false);
     const { followedUsers, followers, toggleFollow } = useFollow();
     const isFollowing = !!userProfile?.username && followedUsers.has(userProfile.username);
     const followerCount = followers.size;
@@ -31,6 +32,16 @@ export const UserProfile = () => {
     const hasShownToast = useRef(false);
 
     const isOwnProfile = routeUsername === currentUser?.username;
+
+    const parseFederatedUsername = (username: string) => {
+        if (!username.includes('@')) return null;
+        
+        const lastAtIndex = username.lastIndexOf('@');
+        const user = username.substring(0, lastAtIndex).replace(/^@+/, '');
+        const domain = username.substring(lastAtIndex + 1);
+        
+        return user && domain ? { username: user, domain } : null;
+    };
 
     useEffect(() => {
         if (currentUser && (!currentUser.username || !currentUser.activated)) {
@@ -54,10 +65,23 @@ export const UserProfile = () => {
         const fetchProfile = async () => {
             setLoading(true);
             try {
-                const data = await fetcher(`/users/${encodeURIComponent(routeUsername)}`);
-                setUserProfile(data);
-                if (!data) {
-                    showToast(`Failed to fetch user profile: ${routeUsername}`, "error");
+                const federatedInfo = parseFederatedUsername(routeUsername);
+                
+                if (federatedInfo) {
+                    setIsExternalUser(true);
+                    
+                    const data = await fetcher(`/users/external?username=${encodeURIComponent(federatedInfo.username)}&domain=${encodeURIComponent(federatedInfo.domain)}`);                    
+                    setUserProfile({
+                        ...data,
+                        username: `${federatedInfo.username}@${federatedInfo.domain}`,
+                        isFederated: true,
+                        domain: federatedInfo.domain
+                    });
+                } else {
+                    setIsExternalUser(false);
+                    
+                    const data = await fetcher(`/users/${encodeURIComponent(routeUsername)}`);
+                    setUserProfile(data);
                 }
             } catch (error) {
                 console.error("Failed to fetch user profile:", error);
@@ -66,19 +90,20 @@ export const UserProfile = () => {
                     hasShownToast.current = true;
                 }
                 setUserProfile(null);
+                showToast("Failed to load user profile", "error");
             } finally {
                 setLoading(false);
             }
         };
 
         fetchProfile();
-    }, [routeUsername, currentUser?.activated]);
+    }, [routeUsername, currentUser?.activated, showToast]);
 
     const fetchProfileFollowCounts = async () => {
-        if (!userProfile || isOwnProfile) return;
+        if (!userProfile || isOwnProfile || isExternalUser) return;
 
         try {
-            const profileUser = `https://yourdomain.com/users/${userProfile.username}`;
+            const profileUser = `http://localhost:3000/users/${userProfile.username}`;
             const followingList = await getFollowingList(profileUser);
             const followerList = await getFollowersList(profileUser);
 
@@ -92,10 +117,10 @@ export const UserProfile = () => {
 
     useEffect(() => {
         fetchProfileFollowCounts();
-    }, [userProfile, isOwnProfile]);
+    }, [userProfile, isOwnProfile, isExternalUser]);
 
     const handleFollowToggle = async () => {
-        if (!userProfile?.username) return;
+        if (!userProfile?.username || isExternalUser) return;
         await toggleFollow(userProfile.username);
         await fetchProfileFollowCounts();
     };
@@ -137,6 +162,10 @@ export const UserProfile = () => {
         navigate('/', { replace: true });
     };
 
+    const handleBackClick = () => {
+        navigate(-1); 
+    };
+
     if (showUserSetup && userProfile) {
         return (
             <div className="user-profile-container">
@@ -166,7 +195,28 @@ export const UserProfile = () => {
     }
 
     if (!userProfile) {
-        return <div className="user-profile-container">User not found</div>;
+        return (
+            <div className="user-profile-container">
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <h2>User Not Found</h2>
+                    <p>The user profile could not be loaded.</p>
+                    <button 
+                        onClick={handleBackClick}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            background: '#4f46e5',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            marginTop: '1rem'
+                        }}
+                    >
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     if (isOwnProfile && !userProfile.activated) {
@@ -189,7 +239,7 @@ export const UserProfile = () => {
                         alt="Profile"
                         className="profile-pic"
                     />
-                    {isOwnProfile && (
+                    {isOwnProfile && !isExternalUser && (
                         <div className="edit-pic-overlay" title="Upload new profile picture">
                             <label className="edit-pic-label">
                                 Change
@@ -201,33 +251,71 @@ export const UserProfile = () => {
                 <div className="user-info">
                     <h2>{userProfile.displayName}</h2>
                     <p className="username">@{userProfile.username}</p>
-                    <p className="bio">{userProfile.summary}</p>
+                    <p className="bio" dangerouslySetInnerHTML={{ __html: userProfile.summary || '' }}></p>
+
+                    {isExternalUser && (
+                        <div className="discover-federated-badge" style={{ marginTop: '1rem' }}>
+                            <span>🌐 Federated User</span>
+                        </div>
+                    )}
 
                     <div className="follow-info">
-                        <div className="follow-info">
-                            {isOwnProfile ? (
-                                <>
-                                    <p>{pluralize(followerCount, "follower")}</p>
-                                    <p>{pluralize(followingCount, "following")}</p>
-                                </>
-                            ) : (
-                                <>
-                                    <p>{pluralize(profileFollowersCount, "follower")}</p>
-                                    <p>{pluralize(profileFollowingCount, "following")}</p>
-                                </>
-                            )}
-                        </div>
+                        {!isExternalUser ? (
+                            <div className="follow-info">
+                                {isOwnProfile ? (
+                                    <>
+                                        <p>{pluralize(followerCount, "follower")}</p>
+                                        <p>{pluralize(followingCount, "following")}</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p>{pluralize(profileFollowersCount, "follower")}</p>
+                                        <p>{pluralize(profileFollowingCount, "following")}</p>
+                                    </>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="follow-info">
+                                <p>{pluralize(userProfile.followersCount || 0, "follower")}</p>
+                                <p>{pluralize(userProfile.followingCount || 0, "following")}</p>
+                            </div>
+                        )}
                     </div>
-                    {!isOwnProfile && (
+                    
+                    {!isOwnProfile && !isExternalUser && (
                         <button className="follow-button" onClick={handleFollowToggle}>
                             {isFollowing ? "Following" : "Follow"}
                         </button>
                     )}
+
+                    {isExternalUser && (
+                        <button 
+                            onClick={handleBackClick}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                background: '#6b7280',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                marginTop: '1rem'
+                            }}
+                        >
+                            ← Back to Search
+                        </button>
+                    )}
                 </div>
             </div>
+            
             <div className="user-posts">
                 <h3>Posts</h3>
-                <Feed username={userProfile.username} />
+                {!isExternalUser ? (
+                    <Feed username={userProfile.username} />
+                ) : (
+                    <p style={{ color: '#666', fontStyle: 'italic' }}>
+                        Posts from federated users are not displayed in this demo.
+                    </p>
+                )}
             </div>
         </div>
     );

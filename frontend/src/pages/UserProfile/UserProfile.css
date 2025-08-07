@@ -142,3 +142,35 @@
   cursor: pointer;
   font-weight: bold;
 }
+
+.discover-federated-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.discover-federated-badge span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bio p {
+  margin: 0;
+}
+
+.bio a {
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.bio a:hover {
+  text-decoration: underline;
+}

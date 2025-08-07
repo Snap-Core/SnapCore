@@ -18,12 +18,12 @@ router.post("/logout", requireAuth, logout);
 
 router.patch("/", requireAuth, updateUserController);
 
-router.get('/external', getExternalUserFromUsername);
-
-router.get("/:username", requireAuth, getUserByUsername);
-
-router.get("/", requireAuth, getAllUsers)
+router.get('/external', requireAuth, getExternalUserFromUsername);
 
 router.get("/search", searchUsers);
+
+router.get("/", requireAuth, getAllUsers);
+
+router.get("/:username", requireAuth, getUserByUsername);
 
 export default router;

@@ -12,6 +12,7 @@ import followRouter from './routes/follow';
 import fedelikeRouter from './routes/federatedLikes';
 import localLikeRouter from './routes/localLikes';
 import userRouter from './routes/user';
+import commentsRouter from './routes/comments';
 import mediaRoutes from './routes/mediaRoutes';
 import communityRoutes from "./routes/communityRoutes";
 
@@ -64,6 +65,7 @@ app.use('/api/follow', followRouter);
 app.use('/api/likes', fedelikeRouter);
 app.use('/api/likes', localLikeRouter);
 app.use('/api/users', userRouter);
+app.use('/api/comments', commentsRouter);
 app.use('/api/community', communityRoutes);
 
 app.listen(PORT, () => {

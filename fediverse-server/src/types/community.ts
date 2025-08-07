@@ -1,15 +1,15 @@
-export interface User {
+export interface Community {
   fediverseId: string;
-  username: string;
+  handle: string;
   displayName: string;
   summary?: string;
-  profilePicUrl: string;
+  communityPicUrl?: string;
   inbox?: string;
   outbox?: string;
   followers?: string;
   following?: string;
+  created: Date;
+  updated: Date
   publicKey: string;
   encryptedPrivateKey?: string;
-  domain?: string;
-  isFederated?: boolean;
 }

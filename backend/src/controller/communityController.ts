@@ -5,10 +5,11 @@ import {generateKeyPair} from "../utils/key-pair-generation";
 import {QueryCommand} from "@aws-sdk/lib-dynamodb";
 import {DynamoDBClient, PutItemCommand, UpdateItemCommand} from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
-import {Community} from "../../../shared/types/community";
+import {Community} from "../types/community";
 import {CreateCommunity} from "../types/createCommunity";
 import {now} from "mongoose";
 import { getDynamoClient } from "../middleware/dynamoDbClient";
+import { Community } from "../types/community";
 
 dotenv.config();
 

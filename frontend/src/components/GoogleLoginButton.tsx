@@ -10,7 +10,7 @@ type PendingUser = {
   isExisting: boolean;
 };
 
-const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const clientId = "858596999445-68n1cfki79j68u54esqpskfsu0fvta42.apps.googleusercontent.com";
 
 export const GoogleLoginButton = () => {
   const googleDivRef = useRef<HTMLDivElement>(null);
