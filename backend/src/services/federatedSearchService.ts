@@ -1,6 +1,5 @@
 import { User } from "../types/user";
 import { requestFediverseServer } from "../utils/fediverse-service";
-import { User } from "../types/user";
 
 export const searchFederatedUsers = async (query: string): Promise<User[]> => {
   try {
@@ -35,6 +34,8 @@ export const searchFederatedUsers = async (query: string): Promise<User[]> => {
 };
 
 export async function fetchExternalUser(username: string, domain: string): Promise<User | null> {
+
+
   try {
     const actorData = await requestFediverseServer(
       `users/external?username=${encodeURIComponent(username)}&domain=${encodeURIComponent(domain)}`,

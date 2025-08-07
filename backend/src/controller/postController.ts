@@ -98,23 +98,17 @@ export const getPostsByActor = async (req: Request, res: Response) => {
 
     const { username, domain, isFederated } = getActorDetails(actorUrl);
 
-    console.log({ username, domain, isFederated });
-
     if (isFederated) {
       const user = await fetchExternalUser(username, domain);
       const outbox = await fetchExternalUserOutbox(user?.outbox || "");
       const posts: any[] = [];
 
-      console.log(outbox.items.length);
-
       for (const item of outbox.items) {
         posts.push({
-          _id: -1,
           content: item.object.content,
           actor: item.actor,
           activityPubObject: item.object,
           createdAt: item.object.published,
-          __v: -1
         }
         );
       }

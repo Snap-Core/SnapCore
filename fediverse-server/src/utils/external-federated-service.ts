@@ -9,7 +9,7 @@ export const getExternalServer = async (
   requestingActorEncryptedPrivateKey : string | null = null,
   requiresHttpSignature : boolean = false) => {
   let headers : Record<string, string> = {
-    Accept: 'application/activity+json',
+    Accept: 'application/activity+json, application/id+json',
     Host: baseUrl.toString(),
     Date: new Date().toISOString()
   };
