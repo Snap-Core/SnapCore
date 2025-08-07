@@ -19,4 +19,6 @@ export interface Actor {
     mediaType: string,
     url: string
   }
+  followersCount?: number;
+  followingCount?: number;
 }

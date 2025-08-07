@@ -20,10 +20,10 @@ router.patch("/", requireAuth, updateUserController);
 
 router.get('/external', requireAuth, getExternalUserFromUsername);
 
-router.get("/:username", requireAuth, getUserByUsername);
-
-router.get("/", requireAuth, getAllUsers)
-
 router.get("/search", searchUsers);
+
+router.get("/", requireAuth, getAllUsers);
+
+router.get("/:username", requireAuth, getUserByUsername);
 
 export default router;

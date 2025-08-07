@@ -11,23 +11,25 @@ interface ActivityPubActor {
 }
 
 export async function verifyHttpSignature(req: Request, res: Response, next: NextFunction) {
+
   if (!req.headers.signature) {
     return res.status(401).json({ error: 'Request not signed' });
   }
 
-  let parsedSignature;
+  let parsedSignature: any;
   try {
-    parsedSignature = httpSignature.parse(req as any);
-  } catch {
+    parsedSignature = httpSignature.parse(req as any); 
+  } catch (err) {
     return res.status(400).json({ error: 'Invalid HTTP Signature format' });
   }
 
-  const keyId = (parsedSignature as any).keyId;
+  const keyId = parsedSignature.keyId;
   if (!keyId || typeof keyId !== 'string') {
     return res.status(400).json({ error: 'Missing keyId in signature' });
   }
 
   try {
+
     const actorRes = await fetch(keyId, {
       headers: { Accept: 'application/activity+json' }
     });
@@ -43,17 +45,13 @@ export async function verifyHttpSignature(req: Request, res: Response, next: Nex
       return res.status(400).json({ error: 'Public key not found for actor' });
     }
 
-    const verified = httpSignature.verifySignature(
-      parsedSignature,
-      pubKeyPem
-    );
-
+    const verified = httpSignature.verify(parsedSignature, pubKeyPem);
     if (!verified) {
       return res.status(401).json({ error: 'Signature verification failed' });
     }
 
     return next();
-  } catch {
+  } catch (err) {
     return res.status(500).json({ error: 'Signature verification error' });
   }
 }

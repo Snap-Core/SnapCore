@@ -5,9 +5,12 @@ export type User = {
   summary?: string;
   email?: string;
   profilePic?: string;
+  profilePicUrl?: string;
   followers?: number;
   following?: number;
   activated?: boolean;
+  followingCount?: number;
+  followersCount?: number;
 };
 
 export interface FederatedUser {
@@ -16,6 +19,9 @@ export interface FederatedUser {
   displayName?: string;
   summary?: string;
   profilePic?: string;
+  profilePicUrl?: string;
   actorUrl?: string;
   isFederated: boolean;
+  followersCount?: number;
+  followingCount?: number;
 }

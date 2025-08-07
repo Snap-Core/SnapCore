@@ -29,7 +29,7 @@ router.get("/:userUrl", async (req, res) => {
   }
 });
 
-// Followers
+
 router.get("/:userUrl/followers/count", async (req, res) => {
   try {
     const rawParam = req.params.userUrl;
@@ -86,7 +86,7 @@ router.get('/:userUrl/followers', async (req, res) => {
   }
 });
 
-// Following
+
 router.get('/:userUrl/following', async (req, res) => {
   try {
     const rawParam = req.params.userUrl;
