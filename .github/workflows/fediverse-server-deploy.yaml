@@ -1,0 +1,180 @@
+name: Deploy Fediverse Server
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "fediverse-server/**"
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Write server.key from secret
+        run: |
+          mkdir -p ./server
+          echo "${{ secrets.SERVER_PKEY }}" > ./backend/server.key
+          chmod 600 ./backend/server.key
+
+      - name: Copy files to EC2 with scp
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ vars.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "./backend/"
+          target: "/home/${{ vars.EC2_USER }}/snapcore-server/"
+          rm: true
+
+      - name: Run remote commands on EC2 and Configure Nginx
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ vars.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            FEDIVERSE_DOMAIN="${{ vars.FEDIVERSE_DOMAIN }}"
+            CERTBOT_EMAIL="${{ secrets.CERTBOT_EMAIL }}"
+            APP_DIR="/home/${{ vars.EC2_USER }}/snapcore-server/backend"
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
+            echo "--- Deploying to EC2: $(pwd) ---"
+
+            # Install NVM and Node.js 22.13.0
+            export NVM_DIR="$HOME/.nvm"
+            if [ ! -d "$NVM_DIR" ]; then
+              echo "Installing NVM..."
+              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+            fi
+            source "$NVM_DIR/nvm.sh"
+
+            if ! node -v | grep -q "v22.13.0"; then
+              echo "Installing Node.js v22.13.0..."
+              nvm install 22.13.0
+              nvm alias default 22.13.0
+              nvm use 22.13.0
+            fi
+
+            # Ensure PM2 is installed
+            if ! command -v pm2 &> /dev/null; then
+              echo "Installing PM2..."
+              npm install -g pm2
+            fi
+
+            echo "Writing environment variables to .env..."
+            cat <<EOF > "$APP_DIR/.env"
+            NODE_ENV=production
+            PORT=4000
+            MONGO_URI=mongodb://localhost:27017/SnapCore
+            CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            REDIRECT_URI=http://localhost:5173
+            TOKEN_ENDPOINT=https://oauth2.googleapis.com/token
+            TOKEN_INFO=https://oauth2.googleapis.com/tokeninfo
+            AUTH_ENDPOINT=https://accounts.google.com/o/oauth2/v2/auth
+            USE_S3=true
+            AWS_REGION=af-south-1
+            S3_BUCKET=snapcore-social-media-assets
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
+            DYNAMODB_TABLE=accounts
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+            KMS_ALIAS=alias/fediverse_private_key_encryption
+            BACKEND_SERVER_URL=https://snapcore.subspace.site
+            FEDIVERSE_SERVER_URL=https://snapcore.subspace.site
+            USERNAME_INDEX_NAME=UsernameIndex
+            FRONTEND_SERVER_URL=https://snapcore.subspace.site/
+            EOF
+
+            # Install app dependencies
+            echo "Installing app dependencies..."
+            npm install
+
+            # Build the app
+            echo "Building the app..."
+            npm run build
+
+            # --- NGINX SETUP ---
+            echo "--- Configuring Nginx ---"
+            if ! command -v nginx &> /dev/null; then
+              echo "Installing Nginx..."
+              sudo yum install -y nginx
+              sudo systemctl enable nginx
+            fi
+
+            echo "Configuring 'server_names_hash_bucket_size'..."
+            if ! grep -q "server_names_hash_bucket_size" /etc/nginx/nginx.conf; then
+              sudo sed -i '/http {/a \    server_names_hash_bucket_size 128;' /etc/nginx/nginx.conf
+            else
+              sudo sed -i 's/^\(\s*\)#\?\s*server_names_hash_bucket_size.*/\1server_names_hash_bucket_size 128;/' /etc/nginx/nginx.conf
+            fi
+
+            NGINX_CONF="/etc/nginx/conf.d/cb-api.conf"
+            FEDIVERSE_DOMAIN="${{ vars.FEDIVERSE_DOMAIN }}"
+            echo "Creating Nginx config file: $NGINX_CONF"
+            sudo tee "$NGINX_CONF" > /dev/null <<EOF
+            server {
+                listen 80;
+                listen [::]:80;
+                server_name $FEDIVERSE_DOMAIN;
+
+                # Proxy requests to Node.js backend
+                location / {
+                    proxy_pass http://localhost:4000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+            }
+            EOF
+
+            echo "Testing and restarting Nginx..."
+            sudo nginx -t && sudo systemctl restart nginx || { echo "Nginx configuration failed!"; exit 1; }
+
+            echo "Installing Certbot and requesting SSL certificate..."
+            if ! command -v certbot &> /dev/null; then
+              sudo yum install -y epel-release
+              sudo yum install -y certbot python3-certbot-nginx
+            fi
+
+            sudo certbot --nginx --non-interactive --agree-tos --email "$CERTBOT_EMAIL" -d "$FEDIVERSE_DOMAIN"
+
+            echo "Reloading Nginx with SSL..."
+            sudo nginx -t && sudo systemctl reload nginx
+
+            # Copy all files except src/, node_modules/, and dist
+            echo "Copying runtime files to dist/ ..."
+            mkdir -p dist
+            rsync -av --exclude='src' --exclude='node_modules' --exclude='dist' ./ dist/
+
+            # Start/restart snapcore-api with PM2
+            echo "Starting/Restarting snapcore-api with PM2..."
+            cd dist
+            export NODE_ENV=production 
+            if pm2 show snapcore-api &> /dev/null; then
+              pm2 restart snapcore-api
+            else
+              pm2 start app.js --name snapcore-api
+            fi
+            pm2 save
+
+            echo "Deployment complete."
