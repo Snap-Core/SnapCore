@@ -10,8 +10,11 @@ dotenv.config();
 const backendServerUrl = new URL(process.env.BACKEND_SERVER_URL as string);
 
 export const getCurrentUser = async (req: Request, res: Response) => {
-  if (!req.user?.googleId) {
+  if (!req.user) {
     return res.status(404).json({ error: "User is a required field" });
+  }
+  if (!('googleId' in req.user)) {
+    return res.status(403).json({ error: "Operation not allowed for federated users" });
   }
   const user = await findUserById(req.user.googleId);
   if (!user) {
@@ -29,10 +32,13 @@ export const logout = (req: Request, res: Response) => {
 
 export const updateUserController = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.user?.googleId;
+    if (!req.user || !('googleId' in req.user)) {
+      return res.status(403).json({ error: "Operation not allowed for federated users" });
+    }
+    const id = req.user.googleId;
     const updates = req.body;
 
-    if (!id || (!updates.name && !updates.email && !updates.displayName && !updates.username && !updates.summary && !updates.profilePic && typeof updates.activated !== "boolean")) {
+    if (!updates.name && !updates.email && !updates.displayName && !updates.username && !updates.summary && !updates.profilePic && typeof updates.activated !== "boolean") {
       return res.status(400).json({ error: "Missing user id or update fields." });
     }
 
@@ -41,7 +47,7 @@ export const updateUserController = async (req: Request, res: Response, next: Ne
       return res.status(404).json({ error: "User not found or no fields to update." });
     }
 
-    res.json({ actor: req.actor, user: updated });
+    res.json({ user: updated });
   } catch (err) {
     next(err);
   }

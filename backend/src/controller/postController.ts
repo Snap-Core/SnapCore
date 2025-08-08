@@ -110,7 +110,10 @@ export const getPostsByActor = async (req: Request, res: Response) => {
 
     if (isFederated) {
       const user = await fetchExternalUser(username, domain);
-      const outbox = await fetchExternalUserOutbox(user?.outbox || "");
+      if (!user || !('outbox' in user)) {
+        throw new Error("User not found or invalid user type");
+      }
+      const outbox = await fetchExternalUserOutbox(user.outbox || "");
       const posts: any[] = [];
 
       for (const item of outbox.items) {

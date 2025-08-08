@@ -22,10 +22,16 @@ export const UserProfile = () => {
     const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
     const [showUserSetup, setShowUserSetup] = useState(false);
     const [isExternalUser, setIsExternalUser] = useState(false);
-    const { followedUsers, followers, toggleFollow } = useFollow();
-    const isFollowing = !!userProfile?.username && followedUsers.has(userProfile.username);
+    const { followedUsers, followers, toggleFollow, refreshFollowData } = useFollow();
+    const [isFollowing, setIsFollowing] = useState(false);
     const followerCount = followers.size;
     const followingCount = followedUsers.size;
+    
+    useEffect(() => {
+        if (userProfile?.username) {
+            setIsFollowing(followedUsers.has(userProfile.username));
+        }
+    }, [userProfile?.username, followedUsers]);
     const [profileFollowersCount, setProfileFollowersCount] = useState(0);
     const [profileFollowingCount, setProfileFollowingCount] = useState(0);
     const pluralize = (count: number, noun: string) => `${count} ${noun}${count !== 1 ? "s" : ""}`;
@@ -118,12 +124,48 @@ export const UserProfile = () => {
 
     useEffect(() => {
         fetchProfileFollowCounts();
-    }, [userProfile, isOwnProfile, isExternalUser]);
+        
+        // Add listener for follow state changes
+        const handleFollowStateChanged = (event: CustomEvent) => {
+            if (event.detail?.username === userProfile?.username) {
+                fetchProfileFollowCounts();
+            }
+        };
+
+        window.addEventListener('followStateChanged', handleFollowStateChanged as EventListener);
+        
+        return () => {
+            window.removeEventListener('followStateChanged', handleFollowStateChanged as EventListener);
+        };
+    }, [userProfile?.username, isOwnProfile, isExternalUser]);
+
+    // Refresh follow counts when the profile is loaded
+    useEffect(() => {
+        if (userProfile?.username) {
+            fetchProfileFollowCounts();
+        }
+    }, [userProfile?.username]);
 
     const handleFollowToggle = async () => {
         if (!userProfile?.username || isExternalUser) return;
-        await toggleFollow(userProfile.username);
-        await fetchProfileFollowCounts();
+        
+        try {
+            // Update local state immediately for better UX
+            setIsFollowing(!isFollowing);
+            
+            await toggleFollow(userProfile.username);
+            
+            // Refresh both the follow counts and global follow state
+            await Promise.all([
+                fetchProfileFollowCounts(),
+                refreshFollowData()
+            ]);
+        } catch (error) {
+            // Revert the local state if the operation failed
+            setIsFollowing(isFollowing);
+            console.error('Follow toggle error:', error);
+            showToast('Failed to ' + (isFollowing ? 'unfollow' : 'follow') + ' user', 'error');
+        }
     };
 
     const handleProfileComplete = async (fields: { username: string; displayName: string; summary: string }) => {

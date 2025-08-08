@@ -8,22 +8,22 @@ import {
   searchUsers,
   getExternalUserFromUsername
 } from "../controller/userController";
-import { requireAuth } from "../middleware/authMiddleware";
+import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-router.get("/me", requireAuth, getCurrentUser);
+router.get("/me", authMiddleware, getCurrentUser);
 
-router.post("/logout", requireAuth, logout);
+router.post("/logout", authMiddleware, logout);
 
-router.patch("/", requireAuth, updateUserController);
+router.patch("/", authMiddleware, updateUserController);
 
-router.get('/external', requireAuth, getExternalUserFromUsername);
+router.get('/external', authMiddleware, getExternalUserFromUsername);
 
 router.get("/search", searchUsers);
 
-router.get("/", requireAuth, getAllUsers);
+router.get("/", authMiddleware, getAllUsers);
 
-router.get("/:username", requireAuth, getUserByUsername);
+router.get("/:username", authMiddleware, getUserByUsername);
 
 export default router;

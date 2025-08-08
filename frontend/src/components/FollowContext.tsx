@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import {
   getFollowersList,
   getFollowingList,
@@ -9,11 +9,7 @@ import { useToast } from "./ToastContext";
 import { useAuth } from "../auth/useAuth";
 import { buildUserUrl } from "../config/urls";
 
-type FollowActivity = {
-  _id: string;
-  actor: string;
-  object: string;
-};
+
 
 type FollowContextType = {
   followedUsers: Set<string>;
@@ -35,12 +31,16 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { user: currentUser } = useAuth();
   const actorUrl = currentUser?.username ? buildUserUrl(currentUser.username) : '';
   const { showToast } = useToast();
-  const hasShownToast = useRef(false);
+
 
   const refreshFollowData = async () => {
+    if (!actorUrl) return; // Don't try to fetch if we don't have a user
+
     try {
-      const followingList: FollowActivity[] = await getFollowingList(actorUrl);
-      const followerList: FollowActivity[] = await getFollowersList(actorUrl);
+      const [followingList, followerList] = await Promise.all([
+        getFollowingList(actorUrl),
+        getFollowersList(actorUrl)
+      ]);
 
       const followingSet = new Set(
         followingList
@@ -56,15 +56,23 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       );
       setFollowers(followerSet);
     } catch (error) {
+      console.error('Error fetching follow data:', error);
       showToast(`Error fetching follow data`, "error");
     }
   };
 
+  // Refresh follow data when the component mounts and when the user changes
   useEffect(() => {
     refreshFollowData();
-  }, []);
+  }, [actorUrl, currentUser?.username]);
+  
+  // Set up an interval to periodically refresh follow data
+  useEffect(() => {
+    const intervalId = setInterval(refreshFollowData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(intervalId);
+  }, [actorUrl]);
 
-  const toggleFollow = async (targetUsername: string) => {
+    const toggleFollow = async (targetUsername: string) => {
     if (!targetUsername || targetUsername === currentUser?.username) return;
 
     const targetUrl = buildUserUrl(targetUsername);
@@ -72,22 +80,56 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     try {
       if (isFollowing) {
-        await unfollowUser(actorUrl, targetUrl);
-        setFollowedUsers((prev) => {
-          const updated = new Set(prev);
-          updated.delete(targetUsername);
-          return updated;
-        });
+        const response = await unfollowUser(targetUrl);
+        if (response.ok) {
+          setFollowedUsers((prev) => {
+            const updated = new Set(prev);
+            updated.delete(targetUsername);
+            return updated;
+          });
+        } else {
+          throw new Error('Failed to unfollow user');
+        }
       } else {
-        await followUser(actorUrl, targetUrl);
-        setFollowedUsers((prev) => new Set(prev).add(targetUsername));
-      }
-    } catch (error) {
-      if (!hasShownToast.current) {
-        showToast(`Failed to toggle follow`, "error");
-        hasShownToast.current = true;
+        const response = await followUser(targetUrl);
+        if (response.ok) {
+          setFollowedUsers((prev) => new Set(prev).add(targetUsername));
+        } else {
+          throw new Error('Failed to follow user');
+        }
       }
 
+      // Update local state immediately to reflect the change
+      const newIsFollowing = !isFollowing;
+      
+      // Notify other components about the follow state change
+      window.dispatchEvent(new CustomEvent('followStateChanged', { 
+        detail: { 
+          username: targetUsername,
+          isFollowing: newIsFollowing
+        }
+      }));
+
+      // Refresh follow data to ensure UI is in sync with server state
+      await refreshFollowData();
+    } catch (error: any) {
+      console.error('Follow toggle error:', error);
+      // Revert the local state change if the server request failed
+      if (error.message?.includes("Already following")) {
+        setFollowedUsers((prev) => new Set(prev).add(targetUsername));
+      } else {
+        // Revert the UI state to what it was before
+        if (isFollowing) {
+          setFollowedUsers((prev) => new Set(prev).add(targetUsername));
+        } else {
+          setFollowedUsers((prev) => {
+            const updated = new Set(prev);
+            updated.delete(targetUsername);
+            return updated;
+          });
+        }
+        showToast(`Failed to ${isFollowing ? 'unfollow' : 'follow'} user`, "error");
+      }
     }
   };
 

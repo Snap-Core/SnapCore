@@ -1,17 +1,28 @@
-export interface User {
-  fediverseId: string;
+export interface BaseUser {
   username: string;
   displayName: string;
-  summary?: string;
-  profilePicUrl: string;
-  inbox?: string;
+  fediverseId: string;
+  publicKey?: string;
+  profilePicUrl?: string;
+}
+
+export interface LocalUser extends BaseUser {
+  googleId: string;
+  userName: string;
+  email: string;
+  isFederated: false;
+}
+
+export interface FederatedUser extends BaseUser {
+  isFederated: true;
+  inbox: string;
   outbox?: string;
   followers?: string;
   following?: string;
-  publicKey: string;
+  summary?: string;
+  domain: string;
   encryptedPrivateKey?: string;
-  domain?: string;
-  isFederated?: boolean;
   followersCount?: number;
-  followingCount?: number;
 }
+
+export type User = LocalUser | FederatedUser;

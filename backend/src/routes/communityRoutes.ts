@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from "../middleware/authMiddleware";
+import { authMiddleware } from "../middleware/authMiddleware";
 import {
   createCommunity,
   getCommunityByHandle,
@@ -9,11 +9,11 @@ import {
 
 const router = express.Router();
 
-router.post("/:handle", requireAuth, createCommunity);
+router.post("/:handle", authMiddleware, createCommunity);
 
-router.patch("/:handle", requireAuth, updateCommunity);
+router.patch("/:handle", authMiddleware, updateCommunity);
 
-router.get("/:handle", requireAuth, getCommunityByHandle);
+router.get("/:handle", authMiddleware, getCommunityByHandle);
 
 router.get('/external', getExternalCommunityFromHandle);
 

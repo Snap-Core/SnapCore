@@ -1,20 +1,19 @@
 import express from "express";
-import { handleInboxPost } from "../controller/inboxController";
 import Follow from "../types/follow";
+import { authMiddleware } from "../middleware/authMiddleware";
+import {
+  followUser,
+  unfollowUser,
+  getFollows
+} from "../controller/followUserController";
 
 const router = express.Router();
 
-router.post("/", handleInboxPost);
+router.post("/", authMiddleware, followUser);
 
-router.get("/", async (req, res) => {
-  try {
-    const follows = await Follow.find();
-    res.json(follows);
-  } catch (err) {
-    console.error("Error fetching all follows:", err);
-    res.status(500).json({ message: "Error fetching follows" });
-  }
-});
+router.delete("/", authMiddleware, unfollowUser);
+
+router.get("/", authMiddleware, getFollows);
 
 router.get("/:userUrl", async (req, res) => {
   try {
@@ -48,7 +47,7 @@ router.get("/:userUrl/actors", async (req, res) => {
   try {
     const userUrl = decodeURIComponent(req.params.userUrl);
     const follows = await Follow.find({ object: userUrl }).select("actor -_id");
-    const actors = follows.map((f) => f.actor);
+    const actors = follows.map((f: { actor: string }) => f.actor);
     res.json({ user: userUrl, actors });
   } catch (err) {
     console.error("Error fetching follower actors:", err);
