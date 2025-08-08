@@ -1,11 +1,17 @@
 import { Request, Response } from 'express';
-import {User} from "../../../shared/types/user";
-import {getBackendServer} from "../utils/backend-service";
+import {requestBackendServer} from "../utils/backend-service";
+import dotenv from 'dotenv';
+import { User } from '../types/user';
+import { Community } from '../types/community';
 
-const fediverseServerUrl = 'http://localhost:4000'; // todo: better way of getting internal server
-const fediverseDomain = new URL(fediverseServerUrl).hostname;
+dotenv.config();
+
+const fediverseServerUrl = new URL(process.env.FEDIVERSE_SERVER_URL as string);
+const fediverseDomain = fediverseServerUrl.hostname;
 
 export const handleWebFinger = async (req: Request, res: Response) => {
+  // todo: add discovery for groups
+
   const resource = req.query.resource as string;
 
   if (!resource || !resource.startsWith('acct:')) {
@@ -22,23 +28,50 @@ export const handleWebFinger = async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Actor domain is not our domain' });
   }
 
-  const response = await getBackendServer(`users/${username}`);
+  let user : User;
+  let community : Community;
 
-  if (!response.ok) {
-    return res.status(500).json({ error: 'Could not retrieve actor internally' });
+  try {
+    user = await requestBackendServer(
+      `users/${username}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/activity+json',
+        },
+      });
+  } catch (error) {
+    return res.status(500).json('Could not retrieve user from backend server\n' +  error);
   }
 
-  const user : User = await response.json();
-
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
+  try {
+    community = await requestBackendServer(
+      `community/${username}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/activity+json',
+        },
+      });
+  } catch (error) {
+    return res.status(500).json('Could not retrieve community from backend server\n' +  error);
   }
 
-  const actorUrl = `${fediverseServerUrl}/users/${user.username}`;
+  if (!user && !community) {
+    return res.status(404).json({ error: 'No User or Community found by that username' });
+  }
+
+  const isUser = !!user
+
+  const actorUrl = `${fediverseServerUrl}${
+    isUser ? 'users' : 'community'
+  }/${
+    isUser ? user.username : community.handle
+  }`;
 
   res.setHeader('Content-Type', 'application/jrd+json');
   res.json({
-    subject: `acct:${user.username}@${fediverseDomain}`,
+    subject: `acct:${isUser ? user.username : community.handle}@${fediverseDomain}`,
     links: [
       {
         rel: 'self',

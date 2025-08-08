@@ -1,9 +1,17 @@
 import { useAuth } from "../auth/useAuth";
 
-export const LogoutButton = () => {
+import { LogOut } from 'lucide-react';
+
+type LogoutButtonProps = {
+  className?: string;
+};
+
+export const LogoutButton = ({ className }: LogoutButtonProps) => {
   const { logout } = useAuth();
+
   return (
-    <button onClick={logout} style={{ padding: "0.5rem 1rem", cursor: "pointer" }}>
+    <button onClick={logout} className={`logout-button ${className ?? ''}`}>
+      <LogOut size={18} style={{ marginRight: 8 }} />
       Log out
     </button>
   );

@@ -1,21 +1,23 @@
 import type { FetcherOptions } from "../types/FetcherOptions";
-
-const BASE_URL = 'http://localhost:3000/api';
+import { URLS } from "../config/urls";
 
 export const fetcher = (path: string, options: FetcherOptions = {}) => {
   const { body, headers = {}, ...rest } = options;
 
+  const isFormData = body instanceof FormData;
   const finalBody =
-    body && typeof body === 'object' && !(body instanceof FormData)
+    body && typeof body === "object" && !isFormData
       ? JSON.stringify(body)
       : body;
 
-  return fetch(`${BASE_URL}${path}`, {
+  return fetch(`${URLS.BACKEND_API}${path}`, {
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
+    headers: isFormData
+      ? headers
+      : {
+        "Content-Type": "application/json",
+        ...headers,
+      },
     body: finalBody,
     ...rest,
   }).then(async (res) => {

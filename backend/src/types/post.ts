@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 
 
 const PostSchema = new mongoose.Schema({
+  id: { type: String },
+  recipient: { type: String },
   content: { type: String, required: true },
   mediaUrl: { type: String },
   mediaType: { type: String, enum: ['image', 'video'], required: false },

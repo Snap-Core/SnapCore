@@ -28,7 +28,7 @@
   margin-bottom: 1rem;
 }
 
-.feed-post-images {
+.feed-post-media {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -36,7 +36,8 @@
   justify-content: flex-start;
 }
 
-.feed-post-image {
+.feed-post-image,
+.feed-post-video {
   width: 100%;
   max-width: 100%;
   aspect-ratio: 4/3;
@@ -50,7 +51,8 @@
 }
 
 @media (min-width: 600px) {
-  .feed-post-image {
+  .feed-post-image,
+  .feed-post-video {
     width: 312px;
     height: 234px;
     max-width: 100%;
@@ -77,10 +79,11 @@
 }
 
 .feed-loading,
-.feed-empty {
+.feed-empty,
+.feed-failed {
   text-align: center;
   color: #888;
-  margin-top: 2rem;
+  margin-top: 4rem;
 }
 
 .post-card {
@@ -312,4 +315,253 @@
 
 .no-scroll {
   overflow: hidden;
+}
+
+
+
+/*========== DETAILS*/
+
+.details-post-content {
+  margin: 0.5rem 0;
+  color: #444;
+}
+
+.post-details-container {
+}
+
+.main-post-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+}
+
+.post-avatar,
+.comment-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+.post-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.post-username {
+  font-weight: 600;
+}
+
+.post-time {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.post-content {
+  margin: 1rem 0;
+  font-size: 1.1rem;
+}
+
+.post-media img,
+.post-video {
+  max-width: 100%;
+  margin-top: 1rem;
+  border-radius: 8px;
+}
+
+.post-actions {
+  margin-top: 1rem;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.post-divider {
+  margin: 2rem 0 1rem;
+  border: none;
+  border-top: 1px solid #eee;
+}
+
+.comments-section {
+  background: #fafafa;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.comment-card {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  /* margin-left: 10px; */
+  flex: 1;
+}
+
+.comment-body {
+  /* background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  margin-left: 10px;
+  flex: 1; */
+}
+
+.comment-username {
+  font-weight: bold;
+  margin-bottom: 4px;
+  display: block;
+  color: gray;
+}
+
+.comment-text {
+  margin: 0;
+  color: #222222;
+}
+
+.comment-input-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.comment-input {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.comment-submit-button {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.comment-submit-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.layout-container {
+  display: grid;
+  grid-template-columns: 1fr 2.5fr 1fr;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  gap: 2rem;
+  position: relative;
+}
+
+.left-sidebar {
+  position: sticky;
+  top: 90px; /* slight offset from top */
+  align-self: start; /* important when using CSS Grid */
+  height: fit-content; /* make sure it doesn’t try to fill too much */
+}
+
+.main-content {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.user-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.user-info strong {
+  font-size: 1rem;
+  color: gray;
+}
+
+.user-info p {
+  font-size: 1rem;
+  color: black;
+  margin: 0;
+}
+
+.comment-input-box {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 0.85rem;
+}
+
+.comment-input-box h4 {
+  margin-bottom: 0.5rem;
+  color: grey;
+  margin-top: 0;
+}
+
+.comment-input {
+  width: calc(100% - 20px);
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 0.5rem;
+}
+
+.comment-submit-button {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.comment-submit-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .layout-container {
+    flex-direction: column;
+  }
+
+  .right-panel {
+    order: 3;
+  }
 }

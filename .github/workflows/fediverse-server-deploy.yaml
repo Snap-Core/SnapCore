@@ -23,31 +23,32 @@ jobs:
       - name: Write server.key from secret
         run: |
           mkdir -p ./server
-          echo "${{ secrets.SERVER_PKEY }}" > ./backend/server.key
-          chmod 600 ./backend/server.key
+          echo "${{ secrets.SERVER_PKEY }}" > ./fediverse-server/server.key
+          chmod 600 ./fediverse-server/server.key
 
       - name: Copy files to EC2 with scp
         uses: appleboy/scp-action@v1
         with:
-          host: ${{ vars.EC2_HOST }}
+
+          host: ${{ vars.EC2_FEDIVERSE_HOST }}
           username: ${{ vars.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          source: "./backend/"
+          source: "./fediverse-server/"
           target: "/home/${{ vars.EC2_USER }}/snapcore-server/"
           rm: true
 
       - name: Run remote commands on EC2 and Configure Nginx
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ vars.EC2_HOST }}
+          host: ${{ vars.EC2_FEDIVERSE_HOST }}
           username: ${{ vars.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
             FEDIVERSE_DOMAIN="${{ vars.FEDIVERSE_DOMAIN }}"
             CERTBOT_EMAIL="${{ secrets.CERTBOT_EMAIL }}"
-            APP_DIR="/home/${{ vars.EC2_USER }}/snapcore-server/backend"
+            APP_DIR="/home/${{ vars.EC2_USER }}/snapcore-server/fediverse-server"
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
             echo "--- Deploying to EC2: $(pwd) ---"
@@ -95,7 +96,7 @@ jobs:
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
             KMS_ALIAS=alias/fediverse_private_key_encryption
             BACKEND_SERVER_URL=https://snapcore.subspace.site
-            FEDIVERSE_SERVER_URL=https://snapcore.subspace.site
+            FEDIVERSE_SERVER_URL=https://snapcore-fediverse.subspace.site
             USERNAME_INDEX_NAME=UsernameIndex
             FRONTEND_SERVER_URL=https://snapcore.subspace.site/
             EOF
@@ -166,14 +167,16 @@ jobs:
             mkdir -p dist
             rsync -av --exclude='src' --exclude='node_modules' --exclude='dist' ./ dist/
 
-            # Start/restart snapcore-api with PM2
-            echo "Starting/Restarting snapcore-api with PM2..."
+
+            # Start/restart fediverse-server with PM2
+            echo "Starting/Restarting fediverse-server with PM2..."
             cd dist
             export NODE_ENV=production 
-            if pm2 show snapcore-api &> /dev/null; then
-              pm2 restart snapcore-api
+            if pm2 show fediverse-server &> /dev/null; then
+              pm2 restart fediverse-server
             else
-              pm2 start app.js --name snapcore-api
+              pm2 start server.js --name fediverse-server
+
             fi
             pm2 save
 

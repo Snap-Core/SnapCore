@@ -77,11 +77,28 @@ jobs:
             cat <<EOF > "$APP_DIR/.env"
             NODE_ENV=production
             PORT=3000
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            CA_CERT_PATH=ca.crt
-            SERVER_KEY_PATH=server.key
-            SERVER_CERT_PATH=server.crt
-            TIMEOUT=6000
+            MONGO_URI=mongodb+srv://snapcore:7Zm4EaAAXpAyOdSm@cluster0.mu9tjxp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+            PORT=3000
+            CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            REDIRECT_URI=http://localhost:5173
+            TOKEN_ENDPOINT=https://oauth2.googleapis.com/token
+            TOKEN_INFO=https://oauth2.googleapis.com/tokeninfo
+            AUTH_ENDPOINT=https://accounts.google.com/o/oauth2/v2/auth
+            USE_S3=true
+            AWS_REGION=af-south-1
+            S3_BUCKET=snapcore-social-media-assets
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }}
+            DYNAMODB_TABLE=accounts
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+            KMS_ALIAS=alias/fediverse_private_key_encryption
+            BACKEND_SERVER_URL=https://snapcore.subspace.site
+            FEDIVERSE_SERVER_URL=https://snapcore-fediverse.subspace.site
+            USERNAME_INDEX_NAME=UsernameIndex
+            DOMAIN=subspace.site
             EOF
 
             # Install app dependencies
@@ -123,6 +140,18 @@ jobs:
 
                 # Proxy API requests to Node.js backend
                 location /api {
+                    proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \$http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
+                    proxy_set_header X-Real-IP \$remote_addr;
+                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto \$scheme;
+                }
+
+                location /upload {
                     proxy_pass http://localhost:3000;
                     proxy_http_version 1.1;
                     proxy_set_header Upgrade \$http_upgrade;

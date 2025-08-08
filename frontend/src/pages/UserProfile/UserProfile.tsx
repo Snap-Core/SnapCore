@@ -1,102 +1,246 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import './UserProfile.css';
-import type { User } from "../../types/User";
-import { useParams } from "react-router-dom";
-import { Feed } from "../Feed/Feed";
+import { UserInfoInput } from "../../components/UserInfoInput";
 import genericProfilePic from '../../assets/generic-profile-p.jpg';
-// import { fetcher } from "../../utils/fetcher";
-import { mockUsers } from "../../services/mockPosts";
-
-const currentUser = {
-    username: "john_doe", // Simulate logged-in user
-};
+import { useAuth } from "../../auth/useAuth";
+import { useParams, useNavigate } from "react-router-dom";
+import type { User } from "../../types/User";
+import { Feed } from "../Feed/Feed";
+import { useFollow } from "../../components/FollowContext";
+import { getFollowersList, getFollowingList } from "../../services/followService";
+import { useToast } from "../../components/ToastContext";
+import { fetcher } from "../../utils/fetcher";
+import { useProfilePicHandler } from "../../hooks/useProfilePicHandler";
+import { buildUserUrl, buildProfilePicUrl } from "../../config/urls";
 
 export const UserProfile = () => {
-    const { username } = useParams<{ username: string }>();
-    const [user, setUser] = useState<User | null>(null);
+    const { username: routeUsername } = useParams<{ username: string }>();
+    const { user: currentUser } = useAuth();
+    const navigate = useNavigate();
+    const [userProfile, setUserProfile] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isFollowing, setIsFollowing] = useState(false);
     const [newProfilePic, setNewProfilePic] = useState<string | null>(null);
+    const [showUserSetup, setShowUserSetup] = useState(false);
+    const [isExternalUser, setIsExternalUser] = useState(false);
+    const { followedUsers, followers, toggleFollow } = useFollow();
+    const isFollowing = !!userProfile?.username && followedUsers.has(userProfile.username);
+    const followerCount = followers.size;
+    const followingCount = followedUsers.size;
+    const [profileFollowersCount, setProfileFollowersCount] = useState(0);
+    const [profileFollowingCount, setProfileFollowingCount] = useState(0);
+    const pluralize = (count: number, noun: string) => `${count} ${noun}${count !== 1 ? "s" : ""}`;
+    const { showToast } = useToast();
+    const hasShownToast = useRef(false);
 
-    // useEffect(() => {
-    //     if (!username) return;
+    const isOwnProfile = routeUsername === currentUser?.username;
 
-    //     fetcher(`/users/${username}`)
-    //         .then((data: User) => {
-    //             setUser(data);
-    //             setLoading(false);
-    //         })
-    //         .catch((err) => {
-    //             console.error("Failed to fetch user", err);
-    //             setLoading(false);
-    //         });
-    // }, [username]);
+    const parseFederatedUsername = (username: string) => {
+        if (!username.includes('@')) return null;
+        
+        const lastAtIndex = username.lastIndexOf('@');
+        const user = username.substring(0, lastAtIndex).replace(/^@+/, '');
+        const domain = username.substring(lastAtIndex + 1);
+        
+        return user && domain ? { username: user, domain } : null;
+    };
 
-    // mock user
     useEffect(() => {
-        if (!username) return;
-        setLoading(true);
-        const foundUser = mockUsers.find((u) => u.username === username);
-
-        if (foundUser) {
-            setUser(foundUser);
-        } else {
-            console.warn("No user found for username:", username);
-            setUser(null);
+        if (currentUser && (!currentUser.username || !currentUser.activated)) {
+            setShowUserSetup(true);
+            setUserProfile(currentUser);
+            setLoading(false);
+            return;
         }
+
+        if (!routeUsername && currentUser?.username) {
+            navigate(`/profile/${currentUser.username}`, { replace: true });
+            return;
+        }
+
         setLoading(false);
-    }, [username]);
+    }, [routeUsername, currentUser, navigate]);
 
-    const handleFollowToggle = () => {
-        setIsFollowing((prev) => !prev);
-        setUser((prev) =>
-            prev
-                ? {
-                    ...prev,
-                    followers: (prev.followers ?? 0) + (isFollowing ? -1 : 1),
+    useEffect(() => {
+        if (!routeUsername || !currentUser?.activated) return;
+
+        const fetchProfile = async () => {
+            setLoading(true);
+            try {
+                const federatedInfo = parseFederatedUsername(routeUsername);
+                
+                if (federatedInfo) {
+                    setIsExternalUser(true);
+                    
+                    const data = await fetcher(`/users/external?username=${encodeURIComponent(federatedInfo.username)}&domain=${encodeURIComponent(federatedInfo.domain)}`);                    
+                    setUserProfile({
+                        ...data,
+                        username: `${federatedInfo.username}@${federatedInfo.domain}`,
+                        isFederated: true,
+                        domain: federatedInfo.domain
+                    });
+                } else {
+                    setIsExternalUser(false);
+                    
+                    const data = await fetcher(`/users/${encodeURIComponent(routeUsername)}`);
+                    setUserProfile(data);
                 }
-                : null
-        );
-    };
+            } catch (error) {
+                console.error("Failed to fetch user profile:", error);
+                if (!hasShownToast.current) {
+                    showToast(`Failed to fetch user profile: ${routeUsername}`, "error");
+                    hasShownToast.current = true;
+                }
+                setUserProfile(null);
+                showToast("Failed to load user profile", "error");
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const handleProfilePicChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
-            setNewProfilePic(url);
+        fetchProfile();
+    }, [routeUsername, currentUser?.activated, showToast]);
 
-            setUser((prev) =>
-                prev
-                    ? {
-                        ...prev,
-                        profilePic: url,
-                    }
-                    : null
-            );
+    const fetchProfileFollowCounts = async () => {
+        if (!userProfile || !userProfile.username || isOwnProfile || isExternalUser) return;
+
+        try {
+            const profileUser = buildUserUrl(userProfile.username);
+            const followingList = await getFollowingList(profileUser);
+            const followerList = await getFollowersList(profileUser);
+
+            setProfileFollowingCount(followingList.length);
+            setProfileFollowersCount(followerList.length);
+        } catch (error) {
+            console.error("Failed to load profile follow data:", error);
+            showToast(`Failed to load profile follow data`, "error");
         }
     };
+
+    useEffect(() => {
+        fetchProfileFollowCounts();
+    }, [userProfile, isOwnProfile, isExternalUser]);
+
+    const handleFollowToggle = async () => {
+        if (!userProfile?.username || isExternalUser) return;
+        await toggleFollow(userProfile.username);
+        await fetchProfileFollowCounts();
+    };
+
+    const handleProfileComplete = async (fields: { username: string; displayName: string; summary: string }) => {
+
+        try {
+            setUserProfile(prev => prev ? { ...prev, ...fields, activated: true } : null);
+            setShowUserSetup(false);
+
+            navigate(`/profile/${fields.username}`, { replace: true });
+
+            showToast("Profile completed successfully!", "success");
+        } catch (error) {
+            console.error("Error handling profile completion:", error);
+            showToast("Error completing profile", "error");
+        }
+    };
+
+    const { handleProfilePicChange } = useProfilePicHandler(
+        (_file, profilePicUrl) => {
+            setNewProfilePic(profilePicUrl);
+            setUserProfile((prev) => prev ? { ...prev, profilePic: profilePicUrl } : null);
+
+            if (!hasShownToast.current) {
+                showToast(`Successfully updated profile picture`, "success");
+                hasShownToast.current = true;
+            }
+        },
+        (err) => {
+            if (!hasShownToast.current) {
+                showToast(`Failed to update profile picture: ${err}`, "error");
+                hasShownToast.current = true;
+            }
+        }
+    );
+
+    const handleProfileSetupClose = () => {
+        navigate('/', { replace: true });
+    };
+
+    const handleBackClick = () => {
+        navigate(-1); 
+    };
+
+    if (showUserSetup && userProfile) {
+        return (
+            <div className="user-profile-container">
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '60vh',
+                    padding: '2rem'
+                }}>
+                    <UserInfoInput
+                        userId={userProfile.id}
+                        onClose={handleProfileSetupClose}
+                        onSubmit={handleProfileComplete}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    if (!routeUsername && !showUserSetup) {
+        return <div className="user-profile-container">Loading...</div>;
+    }
 
     if (loading) {
         return <div className="user-profile-container">Loading user profile...</div>;
     }
 
-    if (!user) {
-        return <div className="user-profile-container">User not found</div>;
+    if (!userProfile) {
+        return (
+            <div className="user-profile-container">
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <h2>User Not Found</h2>
+                    <p>The user profile could not be loaded.</p>
+                    <button 
+                        onClick={handleBackClick}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            background: '#4f46e5',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            marginTop: '1rem'
+                        }}
+                    >
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        );
     }
 
-    const isOwnProfile = currentUser?.username === user.username;
-
+    if (isOwnProfile && !userProfile.activated) {
+        return (
+            <UserInfoInput
+                userId={userProfile.id}
+                onClose={() => { }}
+                onSubmit={fields => {
+                    setUserProfile({ ...userProfile, ...fields, activated: true });
+                }}
+            />
+        );
+    }
     return (
         <div className="user-profile-container">
             <div className="user-header">
                 <div className="profile-pic-wrapper">
                     <img
-                        src={newProfilePic || user.profilePic || genericProfilePic}
+                        src={buildProfilePicUrl(newProfilePic || userProfile.profilePic || genericProfilePic)}
                         alt="Profile"
                         className="profile-pic"
                     />
-
-                    {isOwnProfile && (
+                    {isOwnProfile && !isExternalUser && (
                         <div className="edit-pic-overlay" title="Upload new profile picture">
                             <label className="edit-pic-label">
                                 Change
@@ -106,24 +250,71 @@ export const UserProfile = () => {
                     )}
                 </div>
                 <div className="user-info">
-                    <h2>{user.name}</h2>
-                    <p className="username">@{user.username}</p>
-                    <p className="bio">{user.bio}</p>
+                    <h2>{userProfile.displayName}</h2>
+                    <p className="username">@{userProfile.username}</p>
+                    <p className="bio" dangerouslySetInnerHTML={{ __html: userProfile.summary || '' }}></p>
+
+                    {isExternalUser && (
+                        <div className="discover-federated-badge" style={{ marginTop: '1rem' }}>
+                            <span>🌐 Federated User</span>
+                        </div>
+                    )}
+
                     <div className="follow-info">
-                        <span><strong>{user.followers}</strong> Followers</span>
-                        <span><strong>{user.following}</strong> Following</span>
+                        {!isExternalUser ? (
+                            <div className="follow-info">
+                                {isOwnProfile ? (
+                                    <>
+                                        <p>{pluralize(followerCount, "follower")}</p>
+                                        <p>{pluralize(followingCount, "following")}</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p>{pluralize(profileFollowersCount, "follower")}</p>
+                                        <p>{pluralize(profileFollowingCount, "following")}</p>
+                                    </>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="follow-info">
+                                <p>{pluralize(userProfile.followersCount || 0, "follower")}</p>
+                                <p>{pluralize(userProfile.followingCount || 0, "following")}</p>
+                            </div>
+                        )}
                     </div>
-                    {!isOwnProfile && (
+                    
+                    {!isOwnProfile && !isExternalUser && (
                         <button className="follow-button" onClick={handleFollowToggle}>
                             {isFollowing ? "Following" : "Follow"}
                         </button>
                     )}
+
+                    {isExternalUser && (
+                        <button 
+                            onClick={handleBackClick}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                background: '#6b7280',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                marginTop: '1rem'
+                            }}
+                        >
+                            ← Back to Search
+                        </button>
+                    )}
                 </div>
             </div>
-
+            
             <div className="user-posts">
                 <h3>Posts</h3>
-                <Feed username={user.username} />
+                {!isExternalUser ? (
+                    <Feed username={userProfile.username} />
+                ) : (
+                    <Feed username={userProfile.username} />
+                )}
             </div>
         </div>
     );

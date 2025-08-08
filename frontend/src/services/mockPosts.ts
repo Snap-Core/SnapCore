@@ -11,30 +11,30 @@ import post3Img from "../assets/post3.jpg";
 export const mockUsers: User[] = [
   {
     id: "u1",
-    username: "john_doe",
-    name: "John Doe",
+    username: "Happy",
+    displayName: "John Doe",
     profilePic: user1Pic,
-    bio: "Fullstack Dev & Coffee Addict",
-    followers: 134,
-    following: 88,
+    summary: "Fullstack Dev & Coffee Addict",
+    // followers: 134,
+    // following: 88,
   },
   {
     id: "u2",
-    username: "jane_smith",
-    name: "Jane Smith",
+    username: "Test_user",
+    displayName: "Jane Smith",
     profilePic: user2Pic,
-    bio: "UX Designer & Photographer",
-    followers: 540,
-    following: 120,
+    summary: "UX Designer & Photographer",
+    // followers: 540,
+    // following: 120,
   },
   {
     id: "u3",
-    username: "sam_lee",
-    name: "Sam Lee",
+    username: "KGO",
+    displayName: "Sam Lee",
     profilePic: user3Pic,
-    bio: "Lover of nature & code",
-    followers: 220,
-    following: 199,
+    summary: "Lover of nature & code",
+    // followers: 220,
+    // following: 199,
   },
 ];
 
@@ -81,7 +81,7 @@ export const mockPosts: Post[] = [
   {
     id: "p1",
     text: "Loving the new React 19 features!",
-    images: [post1Img],
+    media: [{"url": post1Img, "type": "image"}],
     createdAt: new Date(Date.now() - 1000 * 10).toISOString(), // 10s ago
     user: mockUsers[0],
     comments: mockComments,
@@ -89,28 +89,28 @@ export const mockPosts: Post[] = [
   {
     id: "p2",
     text: "Designing this landing page was so satisfying 🎨 #UIUX",
-    images: [post2Img, post3Img],
+    media: [{"url": post2Img, "type": "image"}, {"url": post3Img, "type": "image"}],
     createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15m ago
     user: mockUsers[1],
   },
   {
     id: "p3",
     text: "Spotted a rare bird on my hike #NatureLover",
-    images: [],
+    media: [],
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5h ago
     user: mockUsers[2],
   },
   {
     id: "p4",
     text: "Day 42 of #100DaysOfCode — built a weather app today!",
-    images: [],
+    media: [],
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2d ago
     user: mockUsers[0],
   },
   {
     id: "p5",
     text: "Flashback to last summer ",
-    images: [post2Img],
+    media: [{"url": post2Img, "type": "image"}],
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365 * 2).toISOString(), // 2y ago
     user: mockUsers[1],
   },
