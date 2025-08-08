@@ -6,7 +6,8 @@ import genericProfilePic from "./../assets/generic-profile-p.jpg"
 
 export const TopBar = () => {
   const { user, loading } = useAuth();
-  
+  const BASE_URL = "http://localhost:3000"
+
   if (loading) {
     return (
       <nav className="navbar">
@@ -34,16 +35,12 @@ export const TopBar = () => {
           <>
             <Link to={`/profile/${user.username ?? 'user-activation'}`}>
               <img
-                src={`http://localhost:3000${user.profilePic || genericProfilePic}`}
+                src={`${BASE_URL}${user.profilePic || genericProfilePic}`}
                 alt={user.displayName || user.username}
                 className="avatar"
               />
             </Link>
-            <span style={{ marginRight: 8, fontSize: '14px' }}>
-              {user.displayName || user.username}
-            </span>
-            
-            <LogoutButton />
+            <LogoutButton className="logout-button" />
           </>
         ) : (
           <GoogleLoginButton />
