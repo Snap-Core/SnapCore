@@ -98,6 +98,7 @@ jobs:
             BACKEND_SERVER_URL=https://snapcore.subspace.site
             FEDIVERSE_SERVER_URL=https://snapcore-fediverse.subspace.site
             USERNAME_INDEX_NAME=UsernameIndex
+            DOMAIN=subspace.site
             EOF
 
             # Install app dependencies
