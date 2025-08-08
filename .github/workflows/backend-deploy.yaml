@@ -77,7 +77,7 @@ jobs:
             cat <<EOF > "$APP_DIR/.env"
             NODE_ENV=production
             PORT=3000
-            MONGO_URI=mongodb://localhost:27017/SnapCore
+            MONGO_URI=mongodb+srv://snapcore:7Zm4EaAAXpAyOdSm@cluster0.mu9tjxp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
             PORT=3000
             CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
@@ -95,9 +95,10 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
             KMS_ALIAS=alias/fediverse_private_key_encryption
-            BACKEND_SERVER_URL=http://localhost:3000
-            FEDIVERSE_SERVER_URL=http://localhost:4000
+            BACKEND_SERVER_URL=https://snapcore.subspace.site
+            FEDIVERSE_SERVER_URL=https://snapcore-fediverse.subspace.site
             USERNAME_INDEX_NAME=UsernameIndex
+            DOMAIN=subspace.site
             EOF
 
             # Install app dependencies

@@ -70,7 +70,7 @@ export const createPost = async (req: Request, res: Response) => {
       actor,
       mediaUrl,
       mediaType,
-      object: activityPubObject,
+      activityPubObject: activityPubObject,
     });
 
     res.status(201).json(savedPost);
@@ -139,7 +139,7 @@ export const getPostsByActor = async (req: Request, res: Response) => {
 
     res.json(posts);
   } catch (err) {
-    res.status(500).json({ message: 'Error Could not fetch posts by actor' });
+    res.status(500).json({ message: 'Error Could not fetch posts by actor', err });
   }
 };
 
