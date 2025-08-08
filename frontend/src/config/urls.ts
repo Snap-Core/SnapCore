@@ -1,4 +1,4 @@
-const isProduction = import.meta.env.PROD || import.meta.env.VITE_NODE_ENV === 'production';
+const isProduction = true;
 
 export const URLS = {
   BACKEND_API: isProduction ? 'https://snapcore.subspace.site/api' : 'http://localhost:3000/api',

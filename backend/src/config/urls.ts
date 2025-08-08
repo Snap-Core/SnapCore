@@ -1,8 +1,4 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = true
 
 export const URLS = {
   BACKEND_BASE: isProduction ? 'https://snapcore.subspace.site' : (process.env.BACKEND_SERVER_URL || 'http://localhost:3000'),

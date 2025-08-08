@@ -1,8 +1,4 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = true;
 
 export const URLS = {
   FEDIVERSE_BASE: isProduction ? 'https://snapcore-fediverse.subspace.site' : (process.env.FEDIVERSE_SERVER_URL || 'http://localhost:4000'),
