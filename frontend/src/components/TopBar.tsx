@@ -7,7 +7,7 @@ import { buildProfilePicUrl } from "../config/urls";
 
 export const TopBar = () => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <nav className="navbar">
@@ -40,11 +40,7 @@ export const TopBar = () => {
                 className="avatar"
               />
             </Link>
-            <span style={{ marginRight: 8, fontSize: '14px' }}>
-              {user.displayName || user.username}
-            </span>
-            
-            <LogoutButton />
+            <LogoutButton className="logout-button" />
           </>
         ) : (
           <GoogleLoginButton />

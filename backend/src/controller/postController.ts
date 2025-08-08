@@ -6,6 +6,7 @@ import { fetchExternalUser, fetchExternalUserOutbox } from '../services/federate
 import Post from "../types/post";
 import dotenv from "dotenv";
 import {Types} from "mongoose";
+import { URLS } from '../config/urls';
 
 dotenv.config();
 
@@ -39,7 +40,7 @@ const generateActivityPubNote = async (
     note.object.attachment = {
       type: mediaType === 'image' ? 'Image' : 'Video',
       mediaType: mediaType === 'image' ? 'image/jpeg' : 'video/mp4',
-      url: `https://snapcore.subspace.site/api${mediaUrl}`
+      url: `${URLS.BACKEND_BASE}/api${mediaUrl}`
     };
   }
 
@@ -94,7 +95,7 @@ const getActorDetails = (actorUrl: string): { username: string, domain: string, 
     if (username.startsWith("@")) {
       username = username.substring(1);
     }
-    const ourDomain = "snapcore.subspace.su";
+    const ourDomain = new URL(URLS.BACKEND_BASE).hostname;
     return { username, domain, isFederated: (!!domain && domain != ourDomain) };
   } else {
     return { username: actorUrl, domain: "", isFederated: false }
