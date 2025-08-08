@@ -4,6 +4,7 @@ import { requestFediverseServer } from "../utils/fediverse-service";
 import Follow from "../types/follow";
 import { User } from "../types/user";
 import fetch from "node-fetch";
+import { URLS } from "../config/urls";
 
 interface ActivityPubActor {
   id: string;
@@ -23,7 +24,7 @@ export const followUser = async (req: Request & { user?: User }, res: Response) 
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  const actor = `https://${process.env.DOMAIN}/users/${currentUser.username}`;
+  const actor = `https://${URLS.BACKEND_BASE.replace("https://","")}/users/${currentUser.username}`;
 
   try {
     const followActivity = {
