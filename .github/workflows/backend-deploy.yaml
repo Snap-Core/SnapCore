@@ -126,7 +126,6 @@ jobs:
             NGINX_CONF="/etc/nginx/conf.d/cb-api.conf"
             WEB_DOMAIN="${{ vars.WEB_DOMAIN }}"
             API_DOMAIN="${{ vars.API_DOMAIN }}"
-            DOMAIN="snapcore.subspace"
             echo "Creating Nginx config file: $NGINX_CONF"
             sudo tee "$NGINX_CONF" > /dev/null <<EOF
             server {
