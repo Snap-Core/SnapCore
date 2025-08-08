@@ -33,12 +33,12 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const likesHook = useLikes();
-  
+
   useEffect(() => {
     setLoading(true);
     setError(false);
 
-    if (username) {
+    if (username && username != currentUser?.username) {
       getPostsByActor(username, currentUser?.username || "")
         .then((fetchedPosts) => {
           setPosts(fetchedPosts);
@@ -77,8 +77,8 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
 
   const handleLike = async (postId: string) => {
     const actorUrl = currentUser?.username
-      ? buildUserUrl(currentUser.username):
-      null;
+      ? buildUserUrl(currentUser.username)
+      : null;
 
     if (!actorUrl) {
       showToast(`Please log in to like posts`, "warning");
@@ -89,15 +89,12 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
     const objectUrl = post?.activityPubObject?.id;
 
     if (!post || !objectUrl) {
-      showToast(
-        `Cannot like this post: missing post information`,
-        "error"
-      );
+      showToast(`Cannot like this post: missing post information`, "error");
       return;
     }
 
     const alreadyLiked = post.likes?.some((like) => like.actor === actorUrl);
-    
+
     setPosts((prevPosts) =>
       prevPosts.map((p) =>
         p.id !== postId
@@ -120,8 +117,12 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
       )
     );
 
-    const result = await likesHook.handleLike(actorUrl, objectUrl, alreadyLiked);
-    
+    const result = await likesHook.handleLike(
+      actorUrl,
+      objectUrl,
+      alreadyLiked
+    );
+
     if (!result.success) {
       setPosts((prevPosts) =>
         prevPosts.map((p) =>
@@ -129,7 +130,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
             ? p
             : {
                 ...p,
-                liked: alreadyLiked, 
+                liked: alreadyLiked,
                 likes: alreadyLiked
                   ? [
                       ...(p.likes ?? []),
@@ -139,8 +140,8 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
                         activityPubObject: {},
                         createdAt: new Date().toISOString(),
                       },
-                    ] 
-                  : p.likes?.filter((like) => like.actor !== actorUrl) ?? [], 
+                    ]
+                  : p.likes?.filter((like) => like.actor !== actorUrl) ?? [],
               }
         )
       );
@@ -179,12 +180,15 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
     setShowComments(false);
   };
 
-
   return (
     <div className="feed-container">
       {loading && <div className="feed-empty">Loading posts...</div>}
-      {posts.length === 0 && !error && !loading && <div className="feed-empty">No posts yet.</div>}
-      {posts.length === 0 && error && <div className="feed-failed">Failed to fetch posts.</div>}
+      {posts.length === 0 && !error && !loading && (
+        <div className="feed-empty">No posts yet.</div>
+      )}
+      {posts.length === 0 && error && (
+        <div className="feed-failed">Failed to fetch posts.</div>
+      )}
       {posts.map((post) => (
         <div className="post-card" key={post.id}>
           <div className="post-header">
@@ -197,7 +201,10 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
             </Link>
             <div className="post-meta">
               <div className="post-user-row">
-                <Link to={`/profile/${post.user?.username}`} className="post-username">
+                <Link
+                  to={`/profile/${post.user?.username}`}
+                  className="post-username"
+                >
                   {post.user?.username}
                 </Link>
                 <PostOriginBadge postUrl={post.activityPubObject?.id || ""} />
@@ -206,10 +213,12 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
                     className="follow-text"
                     onClick={() => handleFollow(post.user?.username)}
                   >
-                    • {isFollowing(post.user?.username || "") ? "Following" : "Follow"}
+                    •{" "}
+                    {isFollowing(post.user?.username || "")
+                      ? "Following"
+                      : "Follow"}
                   </span>
                 )}
-
               </div>
               <span className="post-time">
                 • {formatRelativeTime(post.createdAt)}
@@ -228,7 +237,6 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
 
           {post.media && post.media?.length > 0 && (
             <div className="feed-post-media">
-
               {post.media.map((media, index) =>
                 media.type === "video" ? (
                   <video key={index} className="feed-post-video" controls>
@@ -236,10 +244,14 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
                     Your browser does not support the video tag.
                   </video>
                 ) : (
-                  <img key={index} className="feed-post-image" src={media.url} alt={`media-${index}`} />
+                  <img
+                    key={index}
+                    className="feed-post-image"
+                    src={media.url}
+                    alt={`media-${index}`}
+                  />
                 )
               )}
-
             </div>
           )}
 
@@ -251,15 +263,12 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
               💬 {post.comments?.length || 0}
             </button>
           </div>
-
-
         </div>
       ))}
 
       {showComments && selectedPost && (
         <div className="modal-backdrop" onClick={() => setShowComments(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-
             <div className="modal-header">
               <h4>{selectedPost.comments?.length || 0} Comments</h4>
               <button
@@ -271,15 +280,16 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
               </button>
             </div>
 
-
             <div className="comment-list">
-              {selectedPost.comments?.length ? (selectedPost.comments?.map((comment) => (
-                <div key={comment.id} className="comment">
-                  <p>
-                    <strong>{comment.user}</strong>: {comment.text}
-                  </p>
-                </div>
-              ))) : (
+              {selectedPost.comments?.length ? (
+                selectedPost.comments?.map((comment) => (
+                  <div key={comment.id} className="comment">
+                    <p>
+                      <strong>{comment.user}</strong>: {comment.text}
+                    </p>
+                  </div>
+                ))
+              ) : (
                 <p>No comments yet.</p>
               )}
             </div>
@@ -303,7 +313,6 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
