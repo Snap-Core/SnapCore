@@ -24,12 +24,12 @@ export const followUser = async (req: Request & { user?: User }, res: Response) 
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  const actor = `https://${URLS.BACKEND_BASE.replace("https://","")}/users/${currentUser.username}`;
+  const actor = `${URLS.BACKEND_BASE}/users/${currentUser.username}`;
 
   try {
     const followActivity = {
       "@context": "https://www.w3.org/ns/activitystreams",
-      id: `https://${process.env.DOMAIN}/activities/${uuidv4()}`,
+      id: `${URLS.BACKEND_BASE}/activities/${uuidv4()}`,
       type: "Follow",
       actor,
       object
