@@ -1,0 +1,18 @@
+name: Deploy All Services
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  deploy-backend:
+    uses: ./.github/workflows/backend-deploy.yaml
+    secrets: inherit
+
+  deploy-fediverse:
+    uses: ./.github/workflows/fediverse-server-deploy.yaml
+    secrets: inherit
+
+  deploy-frontend:
+    needs: [deploy-backend, deploy-fediverse]
+    uses: ./.github/workflows/frontend-deploy.yml
+    secrets: inherit
