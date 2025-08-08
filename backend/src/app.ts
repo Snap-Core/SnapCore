@@ -9,12 +9,12 @@ import postRouter from './routes/post';
 import { connectToDatabase } from './config/database';
 import inboxRouter from './routes/inbox';
 import followRouter from './routes/follow';
-import fedelikeRouter from './routes/federatedLikes';
-import localLikeRouter from './routes/localLikes';
+import likeRouter from './routes/likes';
 import userRouter from './routes/user';
 import commentsRouter from './routes/comments';
 import mediaRoutes from './routes/mediaRoutes';
 import communityRoutes from "./routes/communityRoutes";
+import { URLS } from './config/urls';
 
 dotenv.config();
 
@@ -24,18 +24,18 @@ const PORT = process.env.PORT || 3000;
 
 connectToDatabase();
 
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:4000'];
+const allowedOrigins = URLS.CORS_ORIGINS;
 
 app.use((req, res, next) => {
   const origin = req.header('Origin');
-  if (origin === 'http://localhost:4000') {
+  if (origin === URLS.FEDIVERSE_SERVER) {
     cors({
-      origin: 'http://localhost:4000',
+      origin: URLS.FEDIVERSE_SERVER,
       credentials: true,
     })(req, res, next);
   } else {
     cors({
-      origin: allowedOrigins,
+      origin: [...URLS.CORS_ORIGINS],
       credentials: true,
     })(req, res, next);
   }
@@ -62,8 +62,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/posts', postRouter);
 app.use('/api/inbox', inboxRouter);
 app.use('/api/follow', followRouter);
-app.use('/api/likes', fedelikeRouter);
-app.use('/api/likes', localLikeRouter);
+app.use('/api/likes', likeRouter);
 app.use('/api/users', userRouter);
 app.use('/api/comments', commentsRouter);
 app.use('/api/community', communityRoutes);

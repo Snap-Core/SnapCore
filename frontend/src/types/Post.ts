@@ -22,6 +22,7 @@ export type Post = {
   media?: MediaItem[];
   createdAt: string;
   likes?: Like[];
+  likesCount?: number;
   liked?: boolean;
   comments?: Comment[];
   user?: {

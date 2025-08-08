@@ -1,7 +1,5 @@
 import type { FetcherOptions } from "../types/FetcherOptions";
-
-// const BASE_URL = 'http://localhost:3000/api';
-const BASE_URL = 'http://localhost:3000/api';
+import { URLS } from "../config/urls";
 
 export const fetcher = (path: string, options: FetcherOptions = {}) => {
   const { body, headers = {}, ...rest } = options;
@@ -12,7 +10,7 @@ export const fetcher = (path: string, options: FetcherOptions = {}) => {
       ? JSON.stringify(body)
       : body;
 
-  return fetch(`${BASE_URL}${path}`, {
+  return fetch(`${URLS.BACKEND_API}${path}`, {
     credentials: 'include',
     headers: isFormData
       ? headers

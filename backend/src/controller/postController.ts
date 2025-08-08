@@ -2,9 +2,11 @@ import { Request, Response } from 'express';
 import * as PostRepo from '../models/post';
 import path from 'path';
 import { getUploadedFileUrl } from '../utils/getFileUrl';
+import { fetchExternalUser, fetchExternalUserOutbox } from '../services/federatedSearchService';
 import Post from "../types/post";
 import dotenv from "dotenv";
 import {Types} from "mongoose";
+import { URLS } from '../config/urls';
 
 dotenv.config();
 
@@ -38,7 +40,7 @@ const generateActivityPubNote = async (
     note.object.attachment = {
       type: mediaType === 'image' ? 'Image' : 'Video',
       mediaType: mediaType === 'image' ? 'image/jpeg' : 'video/mp4',
-      url: `https://snapcore.subspace.site/api${mediaUrl}`
+      url: `${URLS.BACKEND_BASE}/api${mediaUrl}`
     };
   }
 
@@ -86,9 +88,49 @@ export const getAllPosts = async (_req: Request, res: Response) => {
   }
 };
 
+const getActorDetails = (actorUrl: string): { username: string, domain: string, isFederated: boolean } => {
+  if (actorUrl.includes("@")) {
+    let username = actorUrl.substring(0, actorUrl.lastIndexOf("@"));
+    const domain = actorUrl.substring(actorUrl.lastIndexOf("@") + 1);
+    if (username.startsWith("@")) {
+      username = username.substring(1);
+    }
+    const ourDomain = new URL(URLS.BACKEND_BASE).hostname;
+    return { username, domain, isFederated: (!!domain && domain != ourDomain) };
+  } else {
+    return { username: actorUrl, domain: "", isFederated: false }
+  }
+}
+
 export const getPostsByActor = async (req: Request, res: Response) => {
   try {
     const actorUrl = decodeURIComponent(req.params.actorUrl);
+
+    const { username, domain, isFederated } = getActorDetails(actorUrl);
+
+    if (isFederated) {
+      const user = await fetchExternalUser(username, domain);
+      const outbox = await fetchExternalUserOutbox(user?.outbox || "");
+      const posts: any[] = [];
+
+      for (const item of outbox.items) {
+        posts.push({
+          content: item.object.content,
+          actor: item.actor,
+          activityPubObject: item.object,
+          createdAt: item.object.published,
+        }
+        );
+      }
+
+      if (!posts.length) {
+        return res.status(404).json({ message: 'No posts found for this actor' });
+      } else {
+        res.json(posts);
+        return;
+      }
+    }
+
     const posts = await PostRepo.getPostsByActor(actorUrl);
 
     if (!posts.length) {

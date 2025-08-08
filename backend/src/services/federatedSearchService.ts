@@ -1,6 +1,5 @@
 import { User } from "../types/user";
 import { requestFediverseServer } from "../utils/fediverse-service";
-import { User } from "../types/user";
 
 export const searchFederatedUsers = async (query: string): Promise<User[]> => {
   try {
@@ -34,7 +33,9 @@ export const searchFederatedUsers = async (query: string): Promise<User[]> => {
   }
 };
 
-async function fetchExternalUser(username: string, domain: string): Promise<User | null> {
+export async function fetchExternalUser(username: string, domain: string): Promise<User | null> {
+
+
   try {
     const actorData = await requestFediverseServer(
       `users/external?username=${encodeURIComponent(username)}&domain=${encodeURIComponent(domain)}`,
@@ -66,4 +67,17 @@ async function fetchExternalUser(username: string, domain: string): Promise<User
     console.log(`Failed to fetch ${username}@${domain}:`, error);
     return null;
   }
+}
+
+export async function fetchExternalUserOutbox(outbox: string): Promise<any | null> {
+    const data = await requestFediverseServer(
+      `users/outbox?outbox=${encodeURIComponent(outbox)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/activity+json',
+        },
+      }
+    );
+    return data;
 }

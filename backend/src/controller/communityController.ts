@@ -9,7 +9,6 @@ import {Community} from "../types/community";
 import {CreateCommunity} from "../types/createCommunity";
 import {now} from "mongoose";
 import { getDynamoClient } from "../middleware/dynamoDbClient";
-import { Community } from "../types/community";
 
 dotenv.config();
 
