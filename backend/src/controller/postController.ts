@@ -70,7 +70,7 @@ export const createPost = async (req: Request, res: Response) => {
       actor,
       mediaUrl,
       mediaType,
-      object: activityPubObject,
+      activityPubObject: activityPubObject,
     });
 
     res.status(201).json(savedPost);
