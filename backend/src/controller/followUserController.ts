@@ -53,7 +53,12 @@ export const followUser = async (req: Request & { user?: User }, res: Response) 
     if (!object.startsWith(`https://${process.env.DOMAIN}`)) {
       try {
         const targetActorUrl = new URL(object);
-        const remoteActor = await requestFediverseServer(`/external-actor?url=${encodeURIComponent(targetActorUrl.toString())}`);
+        // Extract username and domain from the actor URL or handle
+        const [username, domain] = object.includes('@') 
+          ? object.split('@') 
+          : [targetActorUrl.pathname.split('/').pop(), targetActorUrl.hostname];
+
+        const remoteActor = await requestFediverseServer(`/users/external?username=${encodeURIComponent(username)}&domain=${encodeURIComponent(domain)}`);
           
         if (!remoteActor.inbox) {
           throw new Error("Remote user has no inbox");

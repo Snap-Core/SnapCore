@@ -6,16 +6,10 @@ export type FollowActivity = {
   object: string;
 };
 
-export const followUser = async (object: string, isFederated: boolean = false) => {
-  const activity = {
-    type: "Follow",
-    object,
-    isFederated
-  };
-
+export const followUser = async (object: string) => {
   const response = await fetcher("/follow", {
     method: "POST",
-    body: activity,
+    body: JSON.stringify({ object }),
     headers: {
       'Content-Type': 'application/json'
     }
