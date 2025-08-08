@@ -29,6 +29,7 @@ jobs:
       - name: Copy files to EC2 with scp
         uses: appleboy/scp-action@v1
         with:
+
           host: ${{ vars.EC2_FEDIVERSE_HOST }}
           username: ${{ vars.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
@@ -166,6 +167,7 @@ jobs:
             mkdir -p dist
             rsync -av --exclude='src' --exclude='node_modules' --exclude='dist' ./ dist/
 
+
             # Start/restart fediverse-server with PM2
             echo "Starting/Restarting fediverse-server with PM2..."
             cd dist
@@ -174,6 +176,7 @@ jobs:
               pm2 restart fediverse-server
             else
               pm2 start server.js --name fediverse-server
+
             fi
             pm2 save
 
