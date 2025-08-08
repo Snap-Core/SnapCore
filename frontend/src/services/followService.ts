@@ -6,29 +6,37 @@ export type FollowActivity = {
   object: string;
 };
 
-export const followUser = async (actor: string, object: string) => {
-  const activity = {
-    type: "Follow",
-    actor,
-    object,
-  };
-
+export const followUser = async (object: string) => {
   const response = await fetcher("/follow", {
     method: "POST",
-    body: activity,
+    body: JSON.stringify({ object }),
+    headers: {
+      'Content-Type': 'application/json'
+    }
   });
+
+  if (!response.ok) {
+    throw new Error('Failed to follow user');
+  }
 
   return response;
 };
 
-export const unfollowUser = async (actor: string, object: string) => {
+export const unfollowUser = async (object: string) => {
   const response = await fetcher("/follow", {
     method: "DELETE",
-    body: {
-      actor: actor,
-      object: object,
-    },
+    body: JSON.stringify({
+      actor: window.location.origin + '/users/' + localStorage.getItem('username'),
+      object
+    }),
+    headers: {
+      'Content-Type': 'application/json'
+    }
   });
+
+  if (!response.ok) {
+    throw new Error('Failed to unfollow user');
+  }
 
   return response;
 };

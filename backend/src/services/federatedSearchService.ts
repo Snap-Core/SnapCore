@@ -59,7 +59,6 @@ export async function fetchExternalUser(username: string, domain: string): Promi
       followers: actorData.followers,
       following: actorData.following,
       followersCount: actorData.followersCount || 0,
-      followingCount: actorData.followingCount || 0,
       domain,
       isFederated: true
     };
