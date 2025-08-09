@@ -11,11 +11,11 @@ export const PrivateRoute = ({ children }: { children: React.JSX.Element }) => {
   }
 
   if (!user) {
-    return <Navigate to='/' replace />;
+    return <Navigate to='/login' replace />;
   }
 
   if (user && user.activated === false) {
-    return <Navigate to='/profile' replace />;
+    return <Navigate to='/user-activation' replace />;
   }
 
   return children;

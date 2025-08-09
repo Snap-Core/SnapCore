@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import {
   getFollowersList,
   getFollowingList,
@@ -26,8 +26,6 @@ type FollowContextType = {
 
 const FollowContext = createContext<FollowContextType | undefined>(undefined);
 
-// Simulated logged-in user
-// const currentUser = { username: "Happy" };
 
 export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
@@ -37,7 +35,11 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { showToast } = useToast();
   const hasShownToast = useRef(false);
 
-  const refreshFollowData = async () => {
+  const refreshFollowData = useCallback(async () => {
+    if (!currentUser?.username || !actorUrl) {
+      return; 
+    }
+    
     try {
       const followingList: FollowActivity[] = await getFollowingList(actorUrl);
       const followerList: FollowActivity[] = await getFollowersList(actorUrl);
@@ -58,11 +60,13 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (error) {
       showToast(`Error fetching follow data`, "error");
     }
-  };
+  }, [currentUser?.username, actorUrl, showToast]);
 
   useEffect(() => {
-    refreshFollowData();
-  }, []);
+    if (currentUser?.username) {
+      refreshFollowData();
+    }
+  }, [currentUser?.username, refreshFollowData]);
 
   const toggleFollow = async (targetUsername: string) => {
     if (!targetUsername || targetUsername === currentUser?.username) return;
