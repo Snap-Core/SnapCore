@@ -6,6 +6,7 @@ import { PageNotFound } from "./pages/PageNotFound/PageNotFound";
 import { LoginPage } from "./pages/LoginPage/LoginPage";
 import { AuthProvider } from "./auth/AuthProvider";
 import { PrivateRoute } from "./auth/PrivateRoute";
+import { ActivationRoute } from "./auth/ActivationRoute";
 import { UserProfile } from "./pages/UserProfile/UserProfile";
 import "./App.css";
 import { TopBar } from "./components/TopBar";
@@ -16,10 +17,11 @@ import { PostDetailsPage } from "./pages/PostDetails/PostDetailsPage";
 const AppContent = () => {
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
+  const isUserActivationPage = location.pathname === '/user-activation';
 
   return (
     <>
-      {!isLoginPage && <TopBar />}
+      {!isLoginPage && !isUserActivationPage && <TopBar />}
       <div className="page-content">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -28,7 +30,7 @@ const AppContent = () => {
           <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
           <Route path="/profile/:username" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
           <Route path="/post/:id" element={<PrivateRoute><PostDetailsPage /></PrivateRoute>} />
-          <Route path="/user-activation" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
+          <Route path="/user-activation" element={<ActivationRoute><UserProfile /></ActivationRoute>} />
           <Route path="*" element={<PageNotFound />} />
         </Routes>
       </div>

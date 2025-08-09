@@ -1,11 +1,12 @@
 import dotenv from 'dotenv';
 import {token} from "../middleware/fediverseAuthMiddleware";
+import { URLS } from '../config/urls';
 
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-const fediverseServerBaseUrl = (process.env.FEDIVERSE_SERVER_URL as string).replace(/\/$/, '');
+const fediverseServerBaseUrl = (URLS.FEDIVERSE_SERVER).replace(/\/$/, '');
 
 export const requestFediverseServer = async (path: string, options: any = {}) => {
   const headers: Record<string, string> = options.headers as Record<string, string> || {};
