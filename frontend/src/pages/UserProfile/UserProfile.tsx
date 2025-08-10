@@ -76,7 +76,7 @@ export const UserProfile = () => {
                         ...data,
                         username: `${federatedInfo.username}@${federatedInfo.domain}`,
                         isFederated: true,
-                        domain: federatedInfo.domain
+                        domain: `https://${federatedInfo.domain}`
                     });
                 } else {
                     setIsExternalUser(false);
