@@ -9,6 +9,7 @@ import { useToast } from "./ToastContext";
 import { buildUserUrl } from "../config/urls";
 import { fetcher } from "../utils/fetcher";
 import type { User } from "../types/User";
+import { extractDomain } from "../utils/postUtils";
 
 type FollowActivity = {
   _id: string;
@@ -95,7 +96,27 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     const currentActorUrl = buildUserUrl(currentUser.username);
-    const targetUrl = buildUserUrl(targetUsername);
+    let targetUrl: string;
+
+    if (targetUsername.includes('@')) {
+      // For federated users (username@domain format)
+      const [username, domain] = targetUsername.split('@');
+      const cleanUsername = username.replace(/^@+/, '');
+      targetUrl = `https://${domain}/users/${cleanUsername}`;
+
+      try {
+        const domain = extractDomain(targetUrl);
+        if (domain === 'unknown') {
+          throw new Error('Invalid domain');
+        }
+      } catch (error) {
+        showToast(`Invalid federated user URL format: ${targetUrl}`, "error");
+        return;
+      }
+    } else {
+      targetUrl = buildUserUrl(targetUsername);
+    }
+
     const isFollowing = followedUsers.has(targetUsername);
 
     try {

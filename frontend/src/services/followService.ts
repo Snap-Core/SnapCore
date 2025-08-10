@@ -14,7 +14,12 @@ export const followUser = async (actor: string, object: string) => {
     object,
   };
 
-  const response = await fetcher("/follow", {
+  // Check if the object URL is external (contains a different domain)
+  const isExternal = new URL(object).hostname !== new URL(actor).hostname;
+  
+  const endpoint = isExternal ? "/follow/external" : "/follow";
+  
+  const response = await fetcher(endpoint, {
     method: "POST",
     body: activity,
   });
