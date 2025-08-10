@@ -66,8 +66,9 @@ const sendAcceptFollow = async (
 
 export const handleInboxPost = async (req: Request, res: Response) => {
   try {
-    const {recipient, activity} = req.body;
-    if (!activity.type || !activity.actor || !activity.object) {
+    const recipient = req.body?.object || {};
+    const activity = {...req.body};
+    if (!activity?.type || !activity?.actor || !activity?.object) {
       return res.status(400).json({ message: 'Invalid ActivityPub object' });
     }
 

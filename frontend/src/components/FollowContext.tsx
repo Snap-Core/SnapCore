@@ -6,8 +6,9 @@ import {
   unfollowUser,
 } from "../services/followService";
 import { useToast } from "./ToastContext";
-import { useAuth } from "../auth/useAuth";
 import { buildUserUrl } from "../config/urls";
+import { fetcher } from "../utils/fetcher";
+import type { User } from "../types/User";
 
 type FollowActivity = {
   _id: string;
@@ -22,6 +23,7 @@ type FollowContextType = {
   refreshFollowData: () => Promise<void>;
   followerCount: number;
   followingCount: number;
+  loading: boolean;
 };
 
 const FollowContext = createContext<FollowContextType | undefined>(undefined);
@@ -30,19 +32,36 @@ const FollowContext = createContext<FollowContextType | undefined>(undefined);
 export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
   const [followers, setFollowers] = useState<Set<string>>(new Set());
-  const { user: currentUser } = useAuth();
-  const actorUrl = currentUser?.username ? buildUserUrl(currentUser.username) : '';
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
   const hasShownToast = useRef(false);
 
+  useEffect(() => {
+    fetcher('/users/me')
+      .then((data) => {
+        setCurrentUser(data?.user || null);
+      })
+      .catch(() => {
+        setCurrentUser(null);
+        if (!hasShownToast.current) {
+          showToast('Failed to fetch user data', 'error');
+          hasShownToast.current = true;
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [showToast]);
+   
+
   const refreshFollowData = useCallback(async () => {
-    if (!currentUser?.username || !actorUrl) {
+    if (!currentUser?.username) {
       return; 
     }
     
     try {
-      const followingList: FollowActivity[] = await getFollowingList(actorUrl);
-      const followerList: FollowActivity[] = await getFollowersList(actorUrl);
+      const currentActorUrl = buildUserUrl(currentUser.username);
+      const followingList: FollowActivity[] = await getFollowingList(currentActorUrl);
+      const followerList: FollowActivity[] = await getFollowersList(currentActorUrl);
 
       const followingSet = new Set(
         followingList
@@ -60,7 +79,7 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (error) {
       showToast(`Error fetching follow data`, "error");
     }
-  }, [currentUser?.username, actorUrl, showToast]);
+  }, [currentUser?.username, showToast]);
 
   useEffect(() => {
     if (currentUser?.username) {
@@ -70,20 +89,26 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const toggleFollow = async (targetUsername: string) => {
     if (!targetUsername || targetUsername === currentUser?.username) return;
+    if (!currentUser?.username) {
+      showToast("You must be logged in to follow users", "error");
+      return;
+    }
 
+    const currentActorUrl = buildUserUrl(currentUser.username);
     const targetUrl = buildUserUrl(targetUsername);
     const isFollowing = followedUsers.has(targetUsername);
 
     try {
       if (isFollowing) {
-        await unfollowUser(actorUrl, targetUrl);
+        await unfollowUser(currentActorUrl, targetUrl);
+        
         setFollowedUsers((prev) => {
           const updated = new Set(prev);
           updated.delete(targetUsername);
           return updated;
         });
       } else {
-        await followUser(actorUrl, targetUrl);
+        await followUser(currentActorUrl, targetUrl);
         setFollowedUsers((prev) => new Set(prev).add(targetUsername));
       }
     } catch (error) {
@@ -104,10 +129,10 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         refreshFollowData,
         followerCount: followers.size,
         followingCount: followedUsers.size,
-
+        loading
       }}
     >
-      {children}
+      {loading ? null : children}
     </FollowContext.Provider>
   );
 };
