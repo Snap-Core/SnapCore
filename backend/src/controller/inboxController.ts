@@ -20,7 +20,10 @@ const sendAcceptFollow = async (
   try {
     const actorId = extractActorId(actorField);
     const actorRes = await fetch(actorId, {
-      headers: { Accept: 'application/activity+json' }
+      headers: { 
+        'Content-Type': 'application/activity+json',
+        'Accept': 'application/activity+json, application/id+json'
+      },
     });
 
     if (!actorRes.ok) {
@@ -31,7 +34,7 @@ const sendAcceptFollow = async (
     try {
       actorData = await actorRes.json() as { inbox: string };
     } catch (parseError) {
-      return { success: false, error: 'Actor response is not valid JSON' };
+      return { success: false, error: 'Actor response is not valid JSON' + actorRes };
     }
 
     const inboxUrl = actorData.inbox;
