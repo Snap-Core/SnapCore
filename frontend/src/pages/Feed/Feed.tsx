@@ -19,6 +19,7 @@ type FeedProps = {
   username?: string;
   reloadKey?: number;
   domain?: string;
+  isProfileFeed?: boolean;
 };
 
 export const Feed = ({ username, domain, reloadKey, isProfileFeed = true }: FeedProps) => {
