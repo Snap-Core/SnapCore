@@ -4,10 +4,9 @@ import {User} from "../types/user";
 import dotenv from "dotenv";
 import {requestFediverseServer} from "../utils/fediverse-service";
 import {searchFederatedUsers} from "../services/federatedSearchService";
+import { URLS } from "../config/urls";
 
 dotenv.config();
-
-const backendServerUrl = new URL(process.env.BACKEND_SERVER_URL as string);
 
 export const getCurrentUser = async (req: Request, res: Response) => {
   if (!req.user) {
@@ -75,9 +74,32 @@ export const getUserByUsername = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const { id, email, ...rest } = user;
+    const actorUrl = `${URLS.BACKEND_BASE}/users/${username}`;
+    
+    // Return in ActivityPub format
+    const actorObject = {
+      '@context': 'https://www.w3.org/ns/activitystreams',
+      id: actorUrl,
+      type: 'Person',
+      preferredUsername: username,
+      name: user.displayName || username,
+      inbox: `${actorUrl}/inbox`,
+      outbox: `${actorUrl}/outbox`,
+      followers: `${actorUrl}/followers`,
+      following: `${actorUrl}/following`,
+      publicKey: {
+        id: `${actorUrl}#main-key`,
+        owner: actorUrl,
+        publicKeyPem: user.publicKey
+      },
+      summary: user.summary || '',
+      icon: user.profilePicUrl ? {
+        type: 'Image',
+        url: user.profilePicUrl
+      } : undefined
+    };
 
-    res.json({...rest, fediverseId: `${backendServerUrl}users/${username}`} as User);
+    res.json(actorObject);
   } catch (error) {
     console.error("Error fetching user by username:", error);
     res.status(500).json({ error: "Failed to fetch user" });

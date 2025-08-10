@@ -36,10 +36,13 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
         fediverseId: actorUrl,
         username: actorUrl.split('/').pop() || '',
         displayName: req.headers['displayname'] as string || '',
-        publicKey: req.headers['publickey'] as string || '',
+        publicKey: req.headers['publickey'] as string || 'pending',
         isFederated: true,
         domain: new URL(actorUrl).hostname,
-        inbox: `${actorUrl}/inbox`
+        inbox: `${actorUrl}/inbox`,
+        outbox: `${actorUrl}/outbox`,
+        followers: `${actorUrl}/followers`,
+        actorUrl: actorUrl
       };
       req.user = federatedUser;
       return next();
@@ -58,8 +61,11 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
       email: user.email,
       fediverseId: `https://${process.env.DOMAIN}/users/${user.userName}`,
       profilePicUrl: user.profilePicUrl,
-      publicKey: user.publicKey,
-      isFederated: false
+      publicKey: user.publicKey || 'pending',
+      isFederated: false,
+      actorUrl: `https://${process.env.DOMAIN}/users/${user.userName}`,
+      inbox: `https://${process.env.DOMAIN}/users/${user.userName}/inbox`,
+      outbox: `https://${process.env.DOMAIN}/users/${user.userName}/outbox`
     };
     req.user = localUser;
     return next();

@@ -4,6 +4,11 @@ const followSchema = new mongoose.Schema({
   actor: { type: String, required: true },
   object: { type: String, required: true }, 
   activityPubObject: { type: Object, required: true },
+  status: { 
+    type: String, 
+    enum: ['pending', 'accepted', 'rejected'],
+    default: 'pending'
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

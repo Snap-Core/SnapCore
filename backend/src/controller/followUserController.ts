@@ -1,20 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
 import { Request, Response } from "express";
-import { requestFediverseServer } from "../utils/fediverse-service";
 import Follow from "../types/follow";
 import { User } from "../types/user";
-import fetch from "node-fetch";
 import { URLS } from "../config/urls";
-
-interface ActivityPubActor {
-  id: string;
-  inbox?: string;
-  publicKey?: {
-    id: string;
-    owner: string;
-    publicKeyPem: string;
-  };
-}
+import { fetchActorObject, sendSignedRequest, buildActorUrl } from "../utils/activitypub-utils";
 
 export const followUser = async (req: Request & { user?: User }, res: Response) => {
   const { object } = req.body;
@@ -24,20 +13,27 @@ export const followUser = async (req: Request & { user?: User }, res: Response) 
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  const actor = `${URLS.BACKEND_BASE}/users/${currentUser.username}`;
+  const actor = buildActorUrl(currentUser.username);
 
   try {
+    const targetActor = await fetchActorObject(object);
+    const inboxUrl = targetActor.endpoints?.sharedInbox || targetActor.inbox;
+
+    if (!inboxUrl) {
+      throw new Error("Target user has no inbox URL");
+    }
+
     const followActivity = {
       "@context": "https://www.w3.org/ns/activitystreams",
       id: `${URLS.BACKEND_BASE}/activities/${uuidv4()}`,
       type: "Follow",
       actor,
-      object
+      object: targetActor.id
     };
 
     const follow = new Follow({
       actor,
-      object,
+      object: targetActor.id,
       activityPubObject: followActivity
     });
 
@@ -51,34 +47,13 @@ export const followUser = async (req: Request & { user?: User }, res: Response) 
       throw error;
     }
 
-    if (!object.startsWith(`https://${process.env.DOMAIN}`)) {
+    // If it's a remote user, send the signed follow activity to their inbox
+    if (!targetActor.id.startsWith(URLS.BACKEND_BASE)) {
       try {
-        const targetActorUrl = new URL(object);
-        // Extract username and domain from the actor URL or handle
-        const [username, domain] = object.includes('@') 
-          ? object.split('@') 
-          : [targetActorUrl.pathname.split('/').pop(), targetActorUrl.hostname];
-
-        const remoteActor = await requestFediverseServer(`/users/external?username=${encodeURIComponent(username)}&domain=${encodeURIComponent(domain)}`);
-          
-        if (!remoteActor.inbox) {
-          throw new Error("Remote user has no inbox");
-        }
-
-        const response = await fetch(remoteActor.inbox, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/activity+json',
-            'Accept': 'application/activity+json'
-          },
-          body: JSON.stringify(followActivity)
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to send follow activity: ${response.statusText}`);
-        }
+        await sendSignedRequest(inboxUrl, followActivity, currentUser);
       } catch (error) {
-        console.warn("Failed to notify remote server of follow:", error);
+        console.error("Failed to send follow activity:", error);
+        // We still want to keep the local follow record even if remote notification fails
       }
     }
 
