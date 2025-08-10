@@ -19,37 +19,49 @@ export const GoogleLoginButton = () => {
   const [pendingUser, setPendingUser] = useState<PendingUser | null>(null); 
 
   useEffect(() => {
-    if (window.google?.accounts?.id && googleDivRef.current && clientId) {
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response: unknown) => {
-          try {
-            const res = await fetcher('/auth/google-login', {
-              method: 'POST',
-              body: { token: (response as { credential: string }).credential }
-            });
-            if (res.isExisting === false) {
-              setPendingUser(res);
-              setShowModal(true);
-            } else {
-              setUser(res);
+    const initializeGoogleSignIn = () => {
+      if (window.google?.accounts?.id && googleDivRef.current && clientId) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: async (response: unknown) => {
+              try {
+                const res = await fetcher('/auth/google-login', {
+                  method: 'POST',
+                  body: { token: (response as { credential: string }).credential }
+                });
+                if (res.isExisting === false) {
+                  setPendingUser(res);
+                  setShowModal(true);
+                } else {
+                  setUser(res);
+                }
+                window.location.reload()
+              } catch (error) {
+                console.error('Google login failed:', error, response);
+              }
             }
-            window.location.reload()
-          } catch (error) {
-            console.error('Google login failed:', error, response);
-          }
+          });
+          window.google.accounts.id.renderButton(googleDivRef.current, {
+            theme: "outline",
+            size: "medium",
+          });
+        } catch (error) {
+          console.error('Failed to initialize Google Sign-In:', error);
         }
-      });
-      window.google.accounts.id.renderButton(googleDivRef.current, {
-        theme: "outline",
-        size: "medium",
-      });
-    }
+      } else {
+        setTimeout(initializeGoogleSignIn, 100);
+      }
+    };
+
+    initializeGoogleSignIn();
   }, [setUser]);
 
   return (
     <>
-      <div ref={googleDivRef}></div>
+      <div ref={googleDivRef} style={{ minHeight: '40px' }}>
+        {!window.google && <div>Loading Google Sign-In...</div>}
+      </div>
       {showModal && pendingUser && (
         <UserInfoInput
           userId={pendingUser.googleId}

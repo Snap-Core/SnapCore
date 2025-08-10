@@ -3,7 +3,7 @@ import type React from 'react';
 import { useAuth } from './useAuth';
 import { Loading } from '../components/Loading';
 
-export const PrivateRoute = ({ children }: { children: React.JSX.Element }) => {
+export const ActivationRoute = ({ children }: { children: React.JSX.Element }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -14,9 +14,8 @@ export const PrivateRoute = ({ children }: { children: React.JSX.Element }) => {
     return <Navigate to='/login' replace />;
   }
 
-  if (user && user.activated === false) {
-    return <Navigate to='/user-activation' replace />;
+  if (user.activated) {
+    return <Navigate to='/' replace />;
   }
-
   return children;
 };
