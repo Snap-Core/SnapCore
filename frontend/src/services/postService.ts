@@ -47,32 +47,42 @@ export const getAllPosts = async (
         console.error(`Failed to fetch likes for post ${postUrl}`, error);
       }
 
-      const liked = likes.some((like) =>
-        like.actor.endsWith(currentUserActor)
-      );
+      const liked = likes.some((like) => like.actor.endsWith(currentUserActor));
 
       const media = Array.isArray(raw.media)
         ? raw.media.map((item) => ({
             url: `${URLS.BACKEND_BASE}${item.url.trim()}`,
-            type: (item.type === "video" ? "video" : "image") as "image" | "video",
+            type: (item.type === "video" ? "video" : "image") as
+              | "image"
+              | "video",
           }))
         : raw.mediaUrl
         ? [
             {
               url: `${URLS.BACKEND_BASE}${raw.mediaUrl.trim()}`,
-              type: (raw.mediaType === "video" ? "video" : "image") as "image" | "video",
+              type: (raw.mediaType === "video" ? "video" : "image") as
+                | "image"
+                | "video",
             },
           ]
         : [];
 
-      const username = typeof raw.actor === "string" 
-        ? (raw.actor.includes("/") ? raw.actor.split("/").pop() : raw.actor)
-        : "unknown";
+      const username =
+        typeof raw.actor === "string"
+          ? raw.actor.includes("/")
+            ? raw.actor.split("/").pop()
+            : raw.actor
+          : "unknown";
 
-      let userProfilePic: string | undefined = undefined;
+      const userData = await fetcher(`/users/${username}`);
+      let userProfilePic: string | undefined;
+      let displayName: string | undefined;
 
       try {
-        const userData = await fetcher(`/users/${username}`);
+        if (userData?.displayName) {
+          displayName = userData.displayName;
+        }
+
         if (userData?.profilePic) {
           userProfilePic = `${URLS.BACKEND_BASE}${userData.profilePic}`;
         }
@@ -91,7 +101,7 @@ export const getAllPosts = async (
         comments: [],
         user: {
           username,
-          displayName: username,
+          displayName: displayName,
           profilePic: userProfilePic,
         },
         activityPubObject: raw.activityPubObject!,
@@ -103,8 +113,10 @@ export const getAllPosts = async (
   return filteredPosts;
 };
 
-
-export const getPostsByActor = async (actorUrl: string, currentUserActor: string = "") => {
+export const getPostsByActor = async (
+  actorUrl: string,
+  currentUserActor: string = ""
+) => {
   const encodedActor = encodeURIComponent(actorUrl);
   const rawPosts: RawPost[] = await fetcher(`/posts/actor/${encodedActor}`);
 
@@ -139,19 +151,38 @@ export const getPostsByActor = async (actorUrl: string, currentUserActor: string
       const media = Array.isArray(raw.media)
         ? raw.media.map((item) => ({
             url: `${URLS.BACKEND_BASE}${item.url.trim()}`,
-            type: (item.type === "video" ? "video" : "image") as "image" | "video",
+            type: (item.type === "video" ? "video" : "image") as
+              | "image"
+              | "video",
           }))
         : raw.mediaUrl
         ? [
             {
               url: `${URLS.BACKEND_BASE}${raw.mediaUrl.trim()}`,
-              type: (raw.mediaType === "video" ? "video" : "image") as "image" | "video",
+              type: (raw.mediaType === "video" ? "video" : "image") as
+                | "image"
+                | "video",
             },
           ]
         : [];
 
       const username =
         typeof raw.actor === "string" ? raw.actor.split("/").pop() : "unknown";
+
+      let userProfilePic: string | undefined = undefined;
+      let displayName: string | undefined;
+
+      try {
+        const userData = await fetcher(`/users/${username}`);
+        if (userData?.displayName) {
+          displayName = userData.displayName;
+        }
+        if (userData?.profilePic) {
+          userProfilePic = `${URLS.BACKEND_BASE}${userData.profilePic}`;
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch profile pic for ${username}`, err);
+      }
 
       return {
         id: raw._id,
@@ -164,8 +195,8 @@ export const getPostsByActor = async (actorUrl: string, currentUserActor: string
         comments: [],
         user: {
           username,
-          displayName: username,
-          profilePic: undefined,
+          displayName: displayName,
+          profilePic: userProfilePic,
         },
         activityPubObject: raw.activityPubObject!,
       };
@@ -195,22 +226,28 @@ export const createPost = async (params: {
   });
 
   const raw: RawPost = await response;
-  const user = await fetcher(`/users/me`);
-  const profilePicUrl = buildProfilePicUrl(user.user.profilePic);
-  
+  const currentUser = await fetcher(`/users/me`);
+  const profilePicUrl = buildProfilePicUrl(currentUser.user.profilePic);
+  const displayName = currentUser.user.displayName;
+  const username = currentUser.user.username;
+
   const newPost: Post = {
     id: raw._id,
     text: raw.content,
     media: Array.isArray(raw.media)
       ? raw.media.map((item) => ({
           url: `${URLS.BACKEND_BASE}${item.url.trim()}`,
-          type: (item.type === "video" ? "video" : "image") as "image" | "video",
+          type: (item.type === "video" ? "video" : "image") as
+            | "image"
+            | "video",
         }))
       : raw.mediaUrl
       ? [
           {
             url: `${URLS.BACKEND_BASE}${raw.mediaUrl.trim()}`,
-            type: (raw.mediaType === "video" ? "video" : "image") as "image" | "video",
+            type: (raw.mediaType === "video" ? "video" : "image") as
+              | "image"
+              | "video",
           },
         ]
       : [],
@@ -219,10 +256,8 @@ export const createPost = async (params: {
     likes: [],
     comments: [],
     user: {
-      username:
-        typeof raw.actor === "string" ? raw.actor.split("/").pop()! : "unknown",
-      displayName:
-        typeof raw.actor === "string" ? raw.actor.split("/").pop()! : "Unknown",
+      username: username,
+      displayName: displayName,
       profilePic: profilePicUrl,
     },
   };

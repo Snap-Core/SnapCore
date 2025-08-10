@@ -3,6 +3,7 @@ import "./CreatePost.css";
 import { useAuth } from "../../auth/useAuth";
 import { createPost } from "../../services/postService";
 import { useNavigate } from "react-router-dom";
+import { buildUserUrl } from "../../config/urls";
 
 const MAX_TEXT = 1000;
 const MAX_IMAGE_MB = 5;
@@ -60,7 +61,7 @@ export const CreatePost = () => {
     try {
       await createPost({
         content: text,
-        actor: currentUser.username,
+        actor: buildUserUrl(currentUser.username),
         media: media,
       });
       setSuccess("Your post was uploaded successfully!");

@@ -1,3 +1,5 @@
+import genericProfilePic from "../assets/generic-profile-p.jpg";
+
 const isProduction = true;
 
 export const URLS = {
@@ -18,6 +20,11 @@ export const buildUserUrl = (username: string): string => {
 
 export const buildProfilePicUrl = (profilePicPath: string): string => {
   if (!profilePicPath) return '';
+  
+  if (profilePicPath === genericProfilePic) {
+    return profilePicPath;
+  }
+
   return profilePicPath.startsWith('http') 
     ? profilePicPath 
     : `${URLS.BACKEND_BASE}${profilePicPath}`;

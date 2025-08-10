@@ -28,9 +28,9 @@ export const isLocalPost = (postUrl: string): boolean => {
     return (
       (url.hostname === 'localhost' && url.port === localPort) ||
       url.hostname === process.env.DOMAIN || 
-      url.hostname === 'snapcore.subspace' || 
+      url.hostname === 'snapcore.subspace.site' || 
       url.origin === URLS.BACKEND_BASE ||
-      postUrl.includes('localhost:3000') 
+      postUrl.includes('localhost:3000')
     );
   } catch (error) {
     console.error('Error parsing post URL:', error);
