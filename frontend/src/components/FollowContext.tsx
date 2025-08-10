@@ -19,7 +19,7 @@ type FollowActivity = {
 type FollowContextType = {
   followedUsers: Set<string>;
   followers: Set<string>;
-  toggleFollow: (username: string) => Promise<void>;
+  toggleFollow: (username: string, domain?: string) => Promise<void>;
   refreshFollowData: () => Promise<void>;
   followerCount: number;
   followingCount: number;
@@ -87,7 +87,7 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentUser?.username, refreshFollowData]);
 
-  const toggleFollow = async (targetUsername: string) => {
+  const toggleFollow = async (targetUsername: string, domain: string = '') => {
     if (!targetUsername || targetUsername === currentUser?.username) return;
     if (!currentUser?.username) {
       showToast("You must be logged in to follow users", "error");
@@ -95,7 +95,7 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     const currentActorUrl = buildUserUrl(currentUser.username);
-    const targetUrl = buildUserUrl(targetUsername);
+    const targetUrl = buildUserUrl(targetUsername, domain);
     const isFollowing = followedUsers.has(targetUsername);
 
     try {
