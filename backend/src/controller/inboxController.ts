@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Post from '../types/post';
 import Like from '../types/likes';
 import Follow from '../types/follow';
+import {addGraphFollow, removeGraphFollow} from "../services/neo4jProxyService";
 import { URLS } from '../config/urls';
 
 const extractActorId = (actorField: string | { [key: string]: any }): string => {
@@ -203,6 +204,10 @@ export const handleInboxPost = async (req: Request, res: Response) => {
 
       await follow.save();
 
+      const [followerUsername, followerDomain] = actor.split('@');
+      const [followedUsername, followedDomain] = object.split('@');
+      await addGraphFollow(followerUsername, followerDomain, followedUsername, followedDomain);
+
       const acceptResult = await sendAcceptFollow(activity.actor, object, activity.id);
       if (!acceptResult.success) {
         return res.status(500).json({ message: `Failed to send Accept: ${acceptResult.error}` });
@@ -218,6 +223,11 @@ export const handleInboxPost = async (req: Request, res: Response) => {
       }
 
       const result = await Follow.findOneAndDelete({ actor, object });
+
+      const [followerUsername, followerDomain] = actor.split('@');
+      const [followedUsername, followedDomain] = object.split('@');
+      await removeGraphFollow(followerUsername, followerDomain, followedUsername, followedDomain);
+
       if (result) {
         return res.status(202).json({ message: 'Follow undone successfully' });
       } else {

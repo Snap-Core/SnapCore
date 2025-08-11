@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import {generateKeyPair} from "../utils/key-pair-generation";
 import Fuse from 'fuse.js';
 import {getDynamoClient} from "../middleware/dynamoDbClient";
+import {createGraphUser, updateGraphUser} from "./neo4jProxyService";
 
 dotenv.config();
 
@@ -42,6 +43,16 @@ export async function createUserIfNotExists(user: GoogleUserInfo) {
   });
 
   await getDynamoClient().send(cmd);
+
+  // add to graph db
+  await createGraphUser(
+    user.sub,
+    user.name,
+    user.email,
+    publicKey,
+    encryptedPrivateKey
+  )
+
   return { id: user.sub, name: user.name, email: user.email, isExisting: false, profilePic: undefined };
 }
 
@@ -51,7 +62,7 @@ export async function findUserByUsername(username: string) {
     FilterExpression: "attribute_exists(username)",
   });
   const result = await getDynamoClient().send(cmd);
-  
+
   const user = (result.Items || []).find(item => 
     item.username && item.username.toLowerCase() === username.toLowerCase()
   );
@@ -100,14 +111,14 @@ export async function updateUser(
     exprAttrValues[":displayName"] = updates.displayName;
     hasDisplayName = true;
   }
-  
+
   if (updates.username) {
     updateExpr.push("#un = :username");
     exprAttrNames["#un"] = "username";
     exprAttrValues[":username"] = updates.username;
     hasUsername = true;
   }
-  
+
   if (updates.summary) {
     updateExpr.push("#sm = :summary");
     exprAttrNames["#sm"] = "summary";
@@ -142,11 +153,21 @@ export async function updateUser(
   });
 
   const result = await getDynamoClient().send(cmd);
+
+  // add to graph db
+  await updateGraphUser(
+    id,
+    updates.displayName,
+    updates.username,
+    updates.summary,
+    updates.profilePic
+  )
+
   return result.Attributes;
 }
 
 export async function scanUsers() {
-  const cmd = new ScanCommand({ 
+  const cmd = new ScanCommand({
     TableName: tableName,
     FilterExpression: "#act = :activated",
     ExpressionAttributeNames: { "#act": "activated" },
