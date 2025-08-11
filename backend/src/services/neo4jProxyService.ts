@@ -1,22 +1,35 @@
-import neo4j from 'neo4j-driver';
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const NEO4J_URI = process.env.NEO4J_URI!;
-const NEO4J_USERNAME = process.env.NEO4J_USERNAME!;
-const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD!;
 const FEDIVERSE_SERVER_URL = new URL(process.env.FEDIVERSE_SERVER_URL as string);
+const NEO4J_API = new URL(process.env.NEO4J_API as string);
 
 const fediverseDomain = FEDIVERSE_SERVER_URL.hostname;
 
-const driver = neo4j.driver(
-  NEO4J_URI!,
-  neo4j.auth.basic(NEO4J_USERNAME!, NEO4J_PASSWORD!)
-);
 
+export const queryNeo4j = async (cypher : string, params = {}) => {
+  console.log('cypher', cypher);
+  console.log('params', params);
 
-const session = driver.session();
+  const response = await fetch(`${NEO4J_API}query`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ cypher, params })
+  });
+
+  console.log('response', response);
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data;
+}
+
 
 export const createGraphUser = async (
   id: string,
@@ -25,46 +38,46 @@ export const createGraphUser = async (
   publicKey: string,
   encryptedPrivateKey: string
 ) => {
-  await session.run(
-    `
+  const cypher = `
     CREATE (:User {
-      id: $id,
-      name: $name,
-      email: $email,
+      id: $id, 
+      name: $name, 
+      email: $email, 
       created_at: datetime(),
       activated: false,
       public_key: $publicKey,
       encrypted_private_key: $encryptedPrivateKey
-    })
-    `,
-    {
-      id,
-      name,
-      email,
-      publicKey,
-      encryptedPrivateKey
-    }
-  );
+    })`;
+
+  const params = {
+    id,
+    name,
+    email,
+    publicKey,
+    encryptedPrivateKey
+  };
+
+  await queryNeo4j(cypher, params);
 };
 
 export const getGraphUserById = async (id: string) => {
-  const result = await session.run(
-    `MATCH (u:User {id: $id}) RETURN u`,
-    { id }
-  );
-  return result.records[0]?.get('u').properties;
+  const cypher = `MATCH (u:User {id: $id}) RETURN u`;
+
+  const params =  { id };
+
+  return await queryNeo4j(cypher, params);
 };
 
 export const getGraphUserByUsername = async (username: string) => {
-  const result = await session.run(
-    `
+  const cypher = `
     MATCH (u:User)
     WHERE u.username = $username AND u.domain = $domain
     RETURN u
-    `,
-    { username, fediverseDomain }
-  );
-  return result.records[0]?.get('u').properties;
+    `;
+
+  const params =  { username, fediverseDomain };
+
+  return await queryNeo4j(cypher, params);
 };
 
 export const updateGraphUser = async (
@@ -105,30 +118,31 @@ export const updateGraphUser = async (
     setQueryString.push(`u.profilePic = $profilePic`)
   }
 
-  await session.run(
-    `
+  const cypher = `
     MATCH (u:User {id: $id})
     SET ${setQueryString.join(', ')}
-    `,
-    setProps);
+    `;
+
+  return await queryNeo4j(cypher, setProps);
 };
 
 export const createExternalGraphUser = async (
   username: string,
   domain: string
 ) => {
-  await session.run(
-    `
+  const cypher = `
     CREATE (:User {
-      username: $username,
+      username: $username, 
       domain: $domain
     })
-    `,
-    {
+    `;
+
+  const params = {
       username,
       domain
-    }
-  );
+    };
+
+  await queryNeo4j(cypher, params);
 };
 
 export const addGraphFollow = async (
@@ -137,12 +151,13 @@ export const addGraphFollow = async (
   followedUsername: string,
   followedDomain: string
 ) => {
-  await session.run(
-    `MATCH (a:User {username: $followerUsername, domain: $followerDomain}),
+  const cypher = `MATCH (a:User {username: $followerUsername, domain: $followerDomain}),
            (b:User {username: $followedUsername, domain: $followedDomain})
-     CREATE (a)-[:FOLLOWS {since: datetime()}]->(b)`,
-    { followerUsername, followerDomain, followedUsername, followedDomain }
-  );
+     CREATE (a)-[:FOLLOWS {since: datetime()}]->(b)`;
+
+  const params = { followerUsername, followerDomain, followedUsername, followedDomain };
+
+  await queryNeo4j(cypher, params);
 };
 
 export const getGraphFollowers = async (
@@ -151,19 +166,16 @@ export const getGraphFollowers = async (
   skip = 0,
   limit = 10
 ) => {
-  const result = await session.run(
-    `MATCH (follower:User)-[f:FOLLOWS]->(user:User {username: $userUsername, domain: $userDomain})
-     RETURN follower, f.since AS followedAt
-     ORDER BY f.since DESC
-     SKIP $skip
-     LIMIT $limit`,
-    { userUsername, userDomain, skip, limit }
-  );
+  const cypher = `
+    MATCH (follower:User)-[f:FOLLOWS]->(user:User {username: $userUsername, domain: $userDomain})
+   RETURN follower, f.since AS followedAt
+   ORDER BY f.since DESC
+   SKIP toInteger($skip)
+   LIMIT toInteger($limit)`;
 
-  return result.records.map(record => ({
-    ...record.get('follower').properties,
-    followedAt: record.get('followedAt')
-  }));
+  const params = { userUsername, userDomain, skip, limit };
+
+  return await queryNeo4j(cypher, params);
 };
 
 export const getGraphFollowing = async (
@@ -172,45 +184,42 @@ export const getGraphFollowing = async (
   skip = 0,
   limit = 10
 ) => {
-  const result = await session.run(
-    `MATCH (user:User {username: $userUsername, domain: $userDomain})-[f:FOLLOWS]->(followed:User)
-     RETURN followed, f.since AS followedAt
-     ORDER BY f.since DESC
-     SKIP $skip
-     LIMIT $limit`,
-    { userUsername, userDomain, skip, limit }
-  );
+  const cypher = `
+    MATCH (user:User {username: $userUsername, domain: $userDomain})-[f:FOLLOWS]->(followed:User)
+    RETURN followed, f.since AS followedAt
+    ORDER BY f.since DESC
+    SKIP toInteger($skip)
+    LIMIT toInteger($limit)`;
 
-  return result.records.map(record => ({
-    ...record.get('followed').properties,
-    followedAt: record.get('followedAt')
-  }));
+  const params = { userUsername, userDomain, skip, limit };
+
+  return await queryNeo4j(cypher, params);
 };
 
 export const countGraphFollowers = async (
   userUsername: string,
   userDomain: string
 ) => {
-  const result = await session.run(
-    `MATCH (:User)-[:FOLLOWS]->(user:User {username: $userUsername, domain: $userDomain})
-     RETURN COUNT(*) AS followerCount`,
-    { userUsername, userDomain }
-  );
+  const cypher = `
+    MATCH (:User)-[:FOLLOWS]->(user:User {username: $userUsername, domain: $userDomain})
+    RETURN COUNT(*) AS followerCount`;
 
-  return result.records[0].get('followerCount').toInt();
+  const params = { userUsername, userDomain };
+
+  return await queryNeo4j(cypher, params);
 };
 
 export const countGraphFollowing = async (
   userUsername: string,
   userDomain: string
 ) => {
-  const result = await session.run(
-    `MATCH (user:User {username: $userUsername, domain: $userDomain})-[:FOLLOWS]->(:User)
-     RETURN COUNT(*) AS followingCount`,
-    { userUsername, userDomain }
-  );
+  const cypher = `
+    MATCH (user:User {username: $userUsername, domain: $userDomain})-[:FOLLOWS]->(:User)
+    RETURN COUNT(*) AS followingCount`;
 
-  return result.records[0].get('followingCount').toInt();
+  const params = { userUsername, userDomain };
+
+  return await queryNeo4j(cypher, params);
 };
 
 export const removeGraphFollow = async (
@@ -219,14 +228,14 @@ export const removeGraphFollow = async (
   followedUsername: string,
   followedDomain: string
 ) => {
-  await session.run(
-    `MATCH (
+  const cypher = `
+    MATCH (
       a:User {username: $followerUsername, domain: $followerDomain}
       )-[r:FOLLOWS]->(
       b:User {username: $followedUsername, domain: $followedDomain})
-    DELETE r`,
-    { followerUsername, followerDomain, followedUsername, followedDomain }
-  );
+    DELETE r`;
+
+  const params = { followerUsername, followerDomain, followedUsername, followedDomain };
+
+  return await queryNeo4j(cypher, params);
 };
-
-

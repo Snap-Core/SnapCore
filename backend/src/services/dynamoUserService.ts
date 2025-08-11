@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import {generateKeyPair} from "../utils/key-pair-generation";
 import Fuse from 'fuse.js';
 import {getDynamoClient} from "../middleware/dynamoDbClient";
-import {createGraphUser, updateGraphUser} from "./neo4jService";
+import {createGraphUser, updateGraphUser} from "./neo4jProxyService";
 
 dotenv.config();
 

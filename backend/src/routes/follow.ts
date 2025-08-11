@@ -7,11 +7,99 @@ import {
   getGraphFollowers,
   getGraphFollowing,
   removeGraphFollow
-} from "../services/neo4jService";
+} from "../services/neo4jProxyService";
 
 const router = express.Router();
 
 router.post("/", handleInboxPost);
+
+router.get('/followers', async (req, res) => {
+  try {
+    console.log('Here1');
+    const { username, domain } = req.query as { username: string; domain: string };
+
+    if (!username || !domain) {
+      return res.status(400).json({ error: 'Invalid get followers request' });
+    }
+
+    const page = Number(req.query.page);
+
+    const limit = 10;
+    let skip : number = 0;
+
+    if (page && page > 0) {
+      skip = limit * (page - 1);
+    }
+
+    const followers = await getGraphFollowers(username, domain, skip, limit)
+
+    res.json(followers);
+  } catch (err) {
+    console.error('Error fetching users following:', err);
+    res.status(500).json({ message: 'Error fetching users following' });
+  }
+});
+
+router.get('/following', async (req, res) => {
+  try {
+    const { username, domain } = req.query as { username: string; domain: string };
+
+    if (!username || !domain) {
+      return res.status(400).json({ error: 'Invalid get followung request' });
+    }
+
+    const page = Number(req.query.page);
+
+    const limit = 10;
+    let skip : number = 0;
+
+    if (page && page > 0) {
+      skip = limit * (page - 1);
+    }
+
+    const following = await getGraphFollowing(username, domain, skip, limit)
+
+    res.json(following);
+  } catch (err) {
+    console.error('Error fetching users being followed:', err);
+    res.status(500).json({ message: 'Error fetching users being followed' });
+  }
+});
+
+
+router.get("/followers/count", async (req, res) => {
+  try {
+    const { username, domain } = req.query as { username: string; domain: string };
+
+    if (!username || !domain) {
+      return res.status(400).json({ error: 'Invalid get follower count request' });
+    }
+
+    const followerCount = await countGraphFollowers(username, domain);
+
+    res.json(followerCount);
+  } catch (err) {
+    console.error("Error counting followers for user:", err);
+    res.status(500).json({ message: "Error counting followers for user" });
+  }
+});
+
+router.get('/following/count', async (req, res) => {
+  try {
+    const { username, domain } = req.query as { username: string; domain: string };
+
+    if (!username || !domain) {
+      return res.status(400).json({ error: 'Invalid get user request' });
+    }
+
+    const followingCount = await countGraphFollowing(username, domain);
+
+    res.json(followingCount);
+  } catch (err) {
+    console.error('Error counting following:', err);
+    res.status(500).json({ message: 'Error counting following' });
+  }
+});
 
 router.get("/", async (req, res) => {
   try {
@@ -20,19 +108,6 @@ router.get("/", async (req, res) => {
   } catch (err) {
     console.error("Error fetching all follows:", err);
     res.status(500).json({ message: "Error fetching follows" });
-  }
-});
-
-router.get("/:userUrl", async (req, res) => {
-  try {
-    const rawParam = req.params.userUrl;
-    const userUrl = decodeURIComponent(rawParam);
-
-    const follows = await Follow.find({ object: userUrl });
-    res.json(follows);
-  } catch (err) {
-    console.error("Error fetching follows for user:", err);
-    res.status(500).json({ message: "Error fetching follows for user" });
   }
 });
 
@@ -51,22 +126,7 @@ router.get("/:userUrl/followers/count", async (req, res) => {
   }
 });
 
-router.get("/followers/count", async (req, res) => {
-  try {
-    const { username, domain } = req.query as { username: string; domain: string };
 
-    if (!username || !domain) {
-      return res.status(400).json({ error: 'Invalid get follower count request' });
-    }
-
-    const followerCount = await countGraphFollowers(username, domain);
-
-    res.json(followerCount);
-  } catch (err) {
-    console.error("Error counting followers for user:", err);
-    res.status(500).json({ message: "Error counting followers for user" });
-  }
-});
 
 router.get("/:userUrl/actors", async (req, res) => {
   try {
@@ -110,31 +170,6 @@ router.get('/:userUrl/followers', async (req, res) => {
   }
 });
 
-router.get('/followers', async (req, res) => {
-  try {
-    const { username, domain } = req.query as { username: string; domain: string };
-
-    if (!username || !domain) {
-      return res.status(400).json({ error: 'Invalid get followers request' });
-    }
-
-    const page = Number(req.query.page);
-
-    const limit = 10;
-    let skip : number = 0;
-
-    if (page && page > 0) {
-      skip = limit * (page - 1);
-    }
-
-    const followers = await getGraphFollowers(username, domain, skip, limit)
-
-    res.json(followers);
-  } catch (err) {
-    console.error('Error fetching users following:', err);
-    res.status(500).json({ message: 'Error fetching users following' });
-  }
-});
 
 
 router.get('/:userUrl/following', async (req, res) => {
@@ -168,31 +203,7 @@ router.get('/:userUrl/following', async (req, res) => {
 });
 
 
-router.get('/following', async (req, res) => {
-  try {
-    const { username, domain } = req.query as { username: string; domain: string };
 
-    if (!username || !domain) {
-      return res.status(400).json({ error: 'Invalid get followung request' });
-    }
-
-    const page = Number(req.query.page);
-
-    const limit = 10;
-    let skip : number = 0;
-
-    if (page && page > 0) {
-      skip = limit * (page - 1);
-    }
-
-    const following = await getGraphFollowing(username, domain, skip, limit)
-
-    res.json(following);
-  } catch (err) {
-    console.error('Error fetching users being followed:', err);
-    res.status(500).json({ message: 'Error fetching users being followed' });
-  }
-});
 
 router.get('/:userUrl/following/count', async (req, res) => {
   try {
@@ -205,22 +216,7 @@ router.get('/:userUrl/following/count', async (req, res) => {
   }
 });
 
-router.get('/following/count', async (req, res) => {
-  try {
-    const { username, domain } = req.query as { username: string; domain: string };
 
-    if (!username || !domain) {
-      return res.status(400).json({ error: 'Invalid get user request' });
-    }
-
-    const followingCount = await countGraphFollowing(username, domain);
-
-    res.json(followingCount);
-  } catch (err) {
-    console.error('Error counting following:', err);
-    res.status(500).json({ message: 'Error counting following' });
-  }
-});
 
 router.delete("/", async (req, res) => {
   try {

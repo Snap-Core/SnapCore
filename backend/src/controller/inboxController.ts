@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Post from '../types/post';
 import Like from '../types/likes';
 import Follow from '../types/follow';
-import {addGraphFollow, removeGraphFollow} from "../services/neo4jService";
+import {addGraphFollow, removeGraphFollow} from "../services/neo4jProxyService";
 
 const extractActorId = (actorField: string | { [key: string]: any }): string => {
   if (typeof actorField === 'string') return actorField;
