@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import {User} from "../types/user";
 
 dotenv.config();
 
@@ -175,7 +176,40 @@ export const getGraphFollowers = async (
 
   const params = { userUsername, userDomain, skip, limit };
 
-  return await queryNeo4j(cypher, params);
+  const response = await queryNeo4j(cypher, params);
+
+  return response.map((row : any) => {
+    const {
+      username,
+      domain,
+      displayName,
+      summary,
+      profilePicUrl,
+      inbox,
+      outbox,
+      followers,
+      following,
+      publicKey,
+      encryptedPrivateKey
+    } = row.follower.properties;
+
+    return {
+      fediverseId: domain === fediverseDomain
+        ? `https://${domain}/users/${username}`
+        : undefined,
+      username,
+      displayName,
+      summary,
+      profilePicUrl,
+      inbox,
+      outbox,
+      followers,
+      following,
+      publicKey,
+      encryptedPrivateKey,
+      domain
+    } as User;
+  });
 };
 
 export const getGraphFollowing = async (
@@ -193,7 +227,40 @@ export const getGraphFollowing = async (
 
   const params = { userUsername, userDomain, skip, limit };
 
-  return await queryNeo4j(cypher, params);
+  const response = await queryNeo4j(cypher, params);
+
+  return response.map((row : any) => {
+    const {
+      username,
+      domain,
+      displayName,
+      summary,
+      profilePicUrl,
+      inbox,
+      outbox,
+      followers,
+      following,
+      publicKey,
+      encryptedPrivateKey
+    } = row.followed.properties;
+
+    return {
+      fediverseId: domain === fediverseDomain
+        ? `https://${domain}/users/${username}`
+        : undefined,
+      username,
+      displayName,
+      summary,
+      profilePicUrl,
+      inbox,
+      outbox,
+      followers,
+      following,
+      publicKey,
+      encryptedPrivateKey,
+      domain
+    } as User;
+  });
 };
 
 export const countGraphFollowers = async (
@@ -206,7 +273,9 @@ export const countGraphFollowers = async (
 
   const params = { userUsername, userDomain };
 
-  return await queryNeo4j(cypher, params);
+  const response = await queryNeo4j(cypher, params);
+
+  return response[0]?.followerCount?.low as number;
 };
 
 export const countGraphFollowing = async (
@@ -219,7 +288,9 @@ export const countGraphFollowing = async (
 
   const params = { userUsername, userDomain };
 
-  return await queryNeo4j(cypher, params);
+  const response = await queryNeo4j(cypher, params);
+
+  return response[0]?.followingCount?.low as number;
 };
 
 export const removeGraphFollow = async (
@@ -237,5 +308,5 @@ export const removeGraphFollow = async (
 
   const params = { followerUsername, followerDomain, followedUsername, followedDomain };
 
-  return await queryNeo4j(cypher, params);
+  await queryNeo4j(cypher, params);
 };
