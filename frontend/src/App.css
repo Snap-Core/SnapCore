@@ -1,5 +1,5 @@
 .navbar {
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   width: 100%;
@@ -51,9 +51,11 @@
 }
 
 .page-content {
-  padding-top: 60px;
   background: #f6f8fa;
-  min-height: 100vh;
+  min-height: 90vh;
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .logout-button {

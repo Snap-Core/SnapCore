@@ -78,7 +78,7 @@ export const Feed = ({ username, domain, reloadKey, isProfileFeed = true }: Feed
   };
 
   const handleLike = async (postId: string) => {
-    const actorUrl = currentUser?.username
+     const actorUrl = currentUser?.username
       ? buildUserUrl(currentUser.username)
       : null;
 
@@ -88,65 +88,48 @@ export const Feed = ({ username, domain, reloadKey, isProfileFeed = true }: Feed
     }
 
     const post = posts.find((p) => p.id === postId);
-    const objectUrl = post?.activityPubObject?.id;
-
-    if (!post || !objectUrl) {
+    if (!post?.activityPubObject?.id) {
       showToast(`Cannot like this post: missing post information`, "error");
       return;
     }
 
     const alreadyLiked = post.likes?.some((like) => like.actor === actorUrl);
+    const objectUrl = post.activityPubObject.id;
 
-    setPosts((prevPosts) =>
-      prevPosts.map((p) =>
-        p.id !== postId
-          ? p
-          : {
-              ...p,
-              liked: !alreadyLiked,
-              likes: alreadyLiked
-                ? p.likes?.filter((like) => like.actor !== actorUrl) ?? []
-                : [
-                    ...(p.likes ?? []),
-                    {
-                      actor: actorUrl,
-                      object: objectUrl,
-                      activityPubObject: {},
-                      createdAt: new Date().toISOString(),
-                    },
-                  ],
-            }
-      )
+    // Keep previous state for rollback
+    const prevPosts = [...posts];
+
+    // Optimistic UI update
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        return {
+          ...p,
+          liked: !alreadyLiked,
+          likesCount: alreadyLiked
+            ? Math.max((p.likesCount || p.likes?.length || 0) - 1, 0)
+            : (p.likesCount || p.likes?.length || 0) + 1,
+          likes: alreadyLiked
+            ? p.likes?.filter((like) => like.actor !== actorUrl) ?? []
+            : [
+              ...(p.likes ?? []),
+              {
+                actor: actorUrl,
+                object: objectUrl,
+                activityPubObject: {},
+                createdAt: new Date().toISOString(),
+              },
+            ],
+        };
+      })
     );
 
-    const result = await likesHook.handleLike(
-      actorUrl,
-      objectUrl,
-      alreadyLiked
-    );
+    // Call backend
+    const result = await likesHook.handleLike(actorUrl, objectUrl, alreadyLiked);
 
+    // Rollback if failed
     if (!result.success) {
-      setPosts((prevPosts) =>
-        prevPosts.map((p) =>
-          p.id !== postId
-            ? p
-            : {
-                ...p,
-                liked: alreadyLiked,
-                likes: alreadyLiked
-                  ? [
-                      ...(p.likes ?? []),
-                      {
-                        actor: actorUrl,
-                        object: objectUrl,
-                        activityPubObject: {},
-                        createdAt: new Date().toISOString(),
-                      },
-                    ]
-                  : p.likes?.filter((like) => like.actor !== actorUrl) ?? [],
-              }
-        )
-      );
+      setPosts(prevPosts);
     }
   };
 
@@ -207,7 +190,7 @@ export const Feed = ({ username, domain, reloadKey, isProfileFeed = true }: Feed
                   to={`/profile/${post.user?.username}`}
                   className="post-username"
                 >
-                  {post.user?.username}
+                  {post.user?.displayName}
                 </Link>
                 <PostOriginBadge postUrl={post.activityPubObject?.id || ""} />
                 {post.user?.username !== currentUser?.username && isProfileFeed && (

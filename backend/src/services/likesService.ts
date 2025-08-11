@@ -1,7 +1,11 @@
-import Like from '../types/likes';
-import Post from '../types/post';
-import { notifyFediverseLike, notifyFediverseUnlike, requestFediverseServer } from '../utils/fediverse-service';
-import { isLocalPost } from '../config/urls';
+import Like from "../types/likes";
+import Post from "../types/post";
+import {
+  notifyFediverseLike,
+  notifyFediverseUnlike,
+  requestFediverseServer,
+} from "../utils/fediverse-service";
+import { isLocalPost } from "../config/urls";
 
 export interface LikeData {
   actor: string;
@@ -15,16 +19,15 @@ export interface LikeResponse {
 }
 
 export class LikesService {
-
   static async createLike(likeData: LikeData): Promise<LikeResponse> {
     try {
       const { actor, object } = likeData;
-      const objectUrl = object?.split('#')[0];
+      const objectUrl = object?.split("#")[0];
 
       if (!actor || !objectUrl) {
         return {
           success: false,
-          message: 'Missing actor or object URL'
+          message: "Missing actor or object URL",
         };
       }
 
@@ -35,22 +38,24 @@ export class LikesService {
       } else {
         return await this.createExternalLike(actor, objectUrl);
       }
-
     } catch (error: any) {
-      console.error('Error creating like:', error);
+      console.error("Error creating like:", error);
       return {
         success: false,
-        message: 'Internal server error while creating like'
+        message: "Internal server error while creating like",
       };
     }
   }
 
-  private static async createLocalLike(actor: string, objectUrl: string): Promise<LikeResponse> {
-    const post = await Post.findOne({ 'activityPubObject.id': objectUrl });
+  private static async createLocalLike(
+    actor: string,
+    objectUrl: string
+  ): Promise<LikeResponse> {
+    const post = await Post.findOne({ "activityPubObject.id": objectUrl });
     if (!post) {
       return {
         success: false,
-        message: 'Post does not exist'
+        message: "Post does not exist",
       };
     }
 
@@ -58,13 +63,13 @@ export class LikesService {
     if (existingLike) {
       return {
         success: false,
-        message: 'Post already liked'
+        message: "Post already liked",
       };
     }
 
     const activityPubObject = {
-      '@context': 'https://www.w3.org/ns/activitystreams',
-      type: 'Like',
+      "@context": "https://www.w3.org/ns/activitystreams",
+      type: "Like",
       actor,
       object: objectUrl,
       published: new Date().toISOString(),
@@ -76,20 +81,25 @@ export class LikesService {
       activityPubObject,
     });
 
+    console.log(`THE LIKE OBJECT`, like);
+
     await like.save();
 
     return {
       success: true,
-      message: 'Post liked successfully',
-      like: like.toObject()
+      message: "Local Post liked successfully",
+      like: like.toObject(),
     };
   }
 
-  private static async createExternalLike(actor: string, objectUrl: string): Promise<LikeResponse> {
+  private static async createExternalLike(
+    actor: string,
+    objectUrl: string
+  ): Promise<LikeResponse> {
     try {
       const activityPubObject = {
-        '@context': 'https://www.w3.org/ns/activitystreams',
-        type: 'Like',
+        "@context": "https://www.w3.org/ns/activitystreams",
+        type: "Like",
         actor,
         object: objectUrl,
         published: new Date().toISOString(),
@@ -103,14 +113,13 @@ export class LikesService {
 
       return {
         success: true,
-        message: 'External post liked successfully'
+        message: "External post liked successfully",
       };
-
     } catch (error) {
-      console.error('Error liking external post:', error);
+      console.error("Error liking external post:", error);
       return {
         success: false,
-        message: 'Failed to like external post'
+        message: "Failed to like external post",
       };
     }
   }
@@ -118,12 +127,12 @@ export class LikesService {
   static async removeLike(likeData: LikeData): Promise<LikeResponse> {
     try {
       const { actor, object } = likeData;
-      const objectUrl = object?.split('#')[0];
+      const objectUrl = object?.split("#")[0];
 
       if (!actor || !objectUrl) {
         return {
           success: false,
-          message: 'Missing actor or object URL'
+          message: "Missing actor or object URL",
         };
       }
 
@@ -134,41 +143,49 @@ export class LikesService {
       } else {
         return await this.removeExternalLike(actor, objectUrl);
       }
-
     } catch (error: any) {
-      console.error('Error removing like:', error);
+      console.error("Error removing like:", error);
       return {
         success: false,
-        message: 'Internal server error while removing like'
+        message: "Internal server error while removing like",
       };
     }
   }
 
-  private static async removeLocalLike(actor: string, objectUrl: string): Promise<LikeResponse> {
-    const post = await Post.findOne({ 'activityPubObject.id': objectUrl });
+  private static async removeLocalLike(
+    actor: string,
+    objectUrl: string
+  ): Promise<LikeResponse> {
+    const post = await Post.findOne({ "activityPubObject.id": objectUrl });
     if (!post) {
       return {
         success: false,
-        message: 'Post does not exist'
+        message: "Post does not exist",
       };
     }
 
-    const deletedLike = await Like.findOneAndDelete({ actor, object: objectUrl });
+    const deletedLike = await Like.findOneAndDelete({
+      actor,
+      object: objectUrl,
+    });
 
     if (!deletedLike) {
       return {
         success: false,
-        message: 'Like not found'
+        message: "Like not found",
       };
     }
 
     return {
       success: true,
-      message: 'Like removed successfully'
+      message: "Like removed successfully",
     };
   }
 
-  private static async removeExternalLike(actor: string, objectUrl: string): Promise<LikeResponse> {
+  private static async removeExternalLike(
+    actor: string,
+    objectUrl: string
+  ): Promise<LikeResponse> {
     try {
       await notifyFediverseUnlike({
         actor,
@@ -177,26 +194,32 @@ export class LikesService {
 
       return {
         success: true,
-        message: 'External post unliked successfully'
+        message: "External post unliked successfully",
       };
-
     } catch (error) {
-      console.error('Error unliking external post:', error);
+      console.error("Error unliking external post:", error);
       return {
         success: false,
-        message: 'Failed to unlike external post'
+        message: "Failed to unlike external post",
       };
     }
   }
 
-  static async getLikesByPost(postUrl: string): Promise<{ success: boolean; likes?: any[]; totalCount?: number; message?: string }> {
+  static async getLikesByPost(
+    postUrl: string
+  ): Promise<{
+    success: boolean;
+    likes?: any[];
+    totalCount?: number;
+    message?: string;
+  }> {
     try {
-      const objectUrl = postUrl?.split('#')[0];
+      const objectUrl = postUrl?.split("#")[0];
 
       if (!objectUrl) {
         return {
           success: false,
-          message: 'Invalid post URL'
+          message: "Invalid post URL",
         };
       }
 
@@ -206,31 +229,35 @@ export class LikesService {
         return await this.getExternalPostLikes(objectUrl);
       }
 
-      const likes = await Like.find({ object: objectUrl }).sort({ createdAt: -1 });
+      const likes = await Like.find({ object: objectUrl }).sort({
+        createdAt: -1,
+      });
 
       return {
         success: true,
-        likes: likes.map(like => like.toObject()),
-        totalCount: likes.length
+        likes: likes.map((like) => like.toObject()),
+        totalCount: likes.length,
       };
-
     } catch (error: any) {
-      console.error('Error fetching likes:', error);
+      console.error("Error fetching likes:", error);
       return {
         success: false,
-        message: 'Internal server error while fetching likes'
+        message: "Internal server error while fetching likes",
       };
     }
   }
 
-  static async hasUserLikedPost(actor: string, postUrl: string): Promise<{ success: boolean; liked?: boolean; message?: string }> {
+  static async hasUserLikedPost(
+    actor: string,
+    postUrl: string
+  ): Promise<{ success: boolean; liked?: boolean; message?: string }> {
     try {
-      const objectUrl = postUrl?.split('#')[0];
+      const objectUrl = postUrl?.split("#")[0];
 
       if (!actor || !objectUrl) {
         return {
           success: false,
-          message: 'Missing actor or post URL'
+          message: "Missing actor or post URL",
         };
       }
 
@@ -239,7 +266,8 @@ export class LikesService {
       if (!isLocal) {
         return {
           success: false,
-          message: 'Cannot check like status for external posts - likes are managed by the origin server'
+          message:
+            "Cannot check like status for external posts - likes are managed by the origin server",
         };
       }
 
@@ -247,24 +275,30 @@ export class LikesService {
 
       return {
         success: true,
-        liked: !!like
+        liked: !!like,
       };
-
     } catch (error: any) {
-      console.error('Error checking like status:', error);
+      console.error("Error checking like status:", error);
       return {
         success: false,
-        message: 'Internal server error while checking like status'
+        message: "Internal server error while checking like status",
       };
     }
   }
 
-  private static async getExternalPostLikes(objectUrl: string): Promise<{ success: boolean; likes?: any[]; totalCount?: number; message?: string }> {
+  private static async getExternalPostLikes(
+    objectUrl: string
+  ): Promise<{
+    success: boolean;
+    likes?: any[];
+    totalCount?: number;
+    message?: string;
+  }> {
     try {
-      const result = await requestFediverseServer('/external/likes', {
-        method: 'POST',
+      const result = await requestFediverseServer("/external/likes", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ objectUrl }),
       });
@@ -273,16 +307,15 @@ export class LikesService {
         success: true,
         likes: result.likes || [],
         totalCount: result.totalCount,
-        message: result.message || 'External likes fetched successfully'
+        message: result.message || "External likes fetched successfully",
       };
-
     } catch (error) {
-      console.error('Error fetching external post likes:', error);
+      console.error("Error fetching external post likes:", error);
       return {
         success: true,
         likes: [],
         totalCount: 0,
-        message: 'Could not fetch external likes - showing empty count'
+        message: "Could not fetch external likes - showing empty count",
       };
     }
   }

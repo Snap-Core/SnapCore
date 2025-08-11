@@ -28,11 +28,16 @@ export const UserInfoInput = ({ userId, onClose, onSubmit }: UserInfoInputProps)
   const { user: currentUser } = useAuth();
 
   function validate() {
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+
     if (
       fields.username.length < limits.username.min ||
       fields.username.length > limits.username.max
     )
       return "Username must be 3-20 characters.";
+
+    if (!usernameRegex.test(fields.username))
+    return "Username can only contain letters, numbers, and underscores.";
     if (
       fields.displayName.length < limits.displayName.min ||
       fields.displayName.length > limits.displayName.max
@@ -125,6 +130,8 @@ export const UserInfoInput = ({ userId, onClose, onSubmit }: UserInfoInputProps)
               }}
               minLength={limits.username.min}
               maxLength={limits.username.max}
+              pattern="^[a-zA-Z0-9_]+$"
+              title="Username can only contain letters, numbers, and underscores."
               required
               autoFocus
             />
