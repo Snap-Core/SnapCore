@@ -11,6 +11,7 @@ export type User = {
   activated?: boolean;
   followingCount?: number;
   followersCount?: number;
+  domain?: string;
 };
 
 export interface FederatedUser {
