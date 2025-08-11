@@ -42,12 +42,13 @@ export class LikesController {
         published: new Date().toISOString()
       };
 
+      let response = null
+      const targetActorUrl = await LikesController.discoverActorInbox(objectUrl);
       try {
-        const targetActorUrl = await LikesController.discoverActorInbox(objectUrl);
-        
         if (targetActorUrl) {
-          const response = await getExternalServer(
-            new URL(targetActorUrl),
+          const targetUrl = new URL(targetActorUrl);
+          response = await getExternalServer(
+            targetUrl,
             '',
             new URL(actor),
             actorData.encryptedPrivateKey, 
@@ -130,12 +131,15 @@ export class LikesController {
         const targetActorUrl = await LikesController.discoverActorInbox(objectUrl);
         
         if (targetActorUrl) {
+          const targetUrl = new URL(targetActorUrl);
           const response = await getExternalServer(
-            new URL(targetActorUrl),
+            targetUrl,
             '',
             new URL(actor),
             actorData.encryptedPrivateKey,
-            true
+            true,
+            'POST',
+            undoActivity
           );
 
           if (response.ok) {
