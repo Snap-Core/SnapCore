@@ -44,10 +44,12 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       })
       .catch(() => {
         setCurrentUser(null);
-        if (!hasShownToast.current) {
-          showToast('Failed to fetch user data', 'error');
-          hasShownToast.current = true;
-        }
+          console.error('Failed to fetch user data');
+
+        // if (!hasShownToast.current) {
+        //   showToast('Failed to fetch user data', 'error');
+        //   hasShownToast.current = true;
+        // }
       })
       .finally(() => setLoading(false));
   }, [showToast]);
