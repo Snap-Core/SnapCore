@@ -14,8 +14,8 @@ export const URLS = {
   FRONTEND_BASE: isProduction ? 'https://snapcore.subspace.site' : 'http://localhost:5173',
 } as const;
 
-export const buildUserUrl = (username: string): string => {
-  return `${URLS.BACKEND_BASE}/users/${username}`;
+export const buildUserUrl = (username: string, url: string = ''): string => {
+  return `${url || URLS.BACKEND_BASE}/users/${username}`;
 };
 
 export const buildProfilePicUrl = (profilePicPath: string): string => {

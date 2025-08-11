@@ -26,7 +26,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<PrivateRoute><DiscoverPage /></PrivateRoute>} />
-          <Route path="/feed" element={<PrivateRoute><Feed /></PrivateRoute>} />
+          <Route path="/feed" element={<PrivateRoute><Feed isProfileFeed={false}/></PrivateRoute>} />
           <Route path="/create-post" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
           <Route path="/profile/:username" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
           <Route path="/post/:id" element={<PrivateRoute><PostDetailsPage /></PrivateRoute>} />

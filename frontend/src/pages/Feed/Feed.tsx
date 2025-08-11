@@ -18,9 +18,11 @@ import { buildUserUrl } from "../../config/urls";
 type FeedProps = {
   username?: string;
   reloadKey?: number;
+  domain?: string;
+  isProfileFeed?: boolean;
 };
 
-export const Feed = ({ username, reloadKey }: FeedProps) => {
+export const Feed = ({ username, domain, reloadKey, isProfileFeed = true }: FeedProps) => {
   const { user: currentUser } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,7 +74,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
 
   const handleFollow = async (targetUsername?: string) => {
     if (!targetUsername) return;
-    await toggleFollow(targetUsername);
+    await toggleFollow(targetUsername, domain);
   };
 
   const handleLike = async (postId: string) => {
@@ -191,7 +193,7 @@ export const Feed = ({ username, reloadKey }: FeedProps) => {
                   {post.user?.displayName}
                 </Link>
                 <PostOriginBadge postUrl={post.activityPubObject?.id || ""} />
-                {post.user?.username !== currentUser?.username && (
+                {post.user?.username !== currentUser?.username && isProfileFeed && (
                   <span
                     className="follow-text"
                     onClick={() => handleFollow(post.user?.username)}

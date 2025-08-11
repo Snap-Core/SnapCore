@@ -14,6 +14,7 @@ import userRouter from './routes/user';
 import commentsRouter from './routes/comments';
 import mediaRoutes from './routes/mediaRoutes';
 import communityRoutes from "./routes/communityRoutes";
+import webfingerRouter from './routes/webfinger';
 import { URLS } from './config/urls';
 
 dotenv.config();
@@ -56,6 +57,10 @@ app.use(session({
 }));
 
 app.use('/uploads', mediaRoutes);
+
+app.use('/', webfingerRouter);
+
+app.use('/users', userRouter);
 
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
