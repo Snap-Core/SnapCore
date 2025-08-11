@@ -11,7 +11,7 @@ import { getFollowersList, getFollowingList } from "../../services/followService
 import { useToast } from "../../components/ToastContext";
 import { fetcher } from "../../utils/fetcher";
 import { useProfilePicHandler } from "../../hooks/useProfilePicHandler";
-import { buildUserUrl, buildProfilePicUrl } from "../../config/urls";
+import { buildUserUrl, buildProfilePicUrl, URLS } from "../../config/urls";
 
 export const UserProfile = () => {
     const { username: routeUsername } = useParams<{ username: string }>();
@@ -76,7 +76,7 @@ export const UserProfile = () => {
                         ...data,
                         username: `${federatedInfo.username}@${federatedInfo.domain}`,
                         isFederated: true,
-                        domain: federatedInfo.domain
+                        domain: `https://${federatedInfo.domain}`
                     });
                 } else {
                     setIsExternalUser(false);
@@ -311,9 +311,9 @@ export const UserProfile = () => {
             <div className="user-posts">
                 <h3>Posts</h3>
                 {!isExternalUser ? (
-                    <Feed username={userProfile.username} />
+                    <Feed username={userProfile.username} domain={URLS.FRONTEND_BASE}/>
                 ) : (
-                    <Feed username={userProfile.username} />
+                    <Feed username={userProfile.username} domain={userProfile.domain} />
                 )}
             </div>
         </div>
