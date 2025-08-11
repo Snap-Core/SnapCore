@@ -8,6 +8,7 @@ export type FollowActivity = {
 
 export const followUser = async (actor: string, object: string) => {
   const activity = {
+    "@context": "https://www.w3.org/ns/activitystreams",
     type: "Follow",
     actor,
     object,

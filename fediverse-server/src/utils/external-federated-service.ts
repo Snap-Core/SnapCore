@@ -11,9 +11,9 @@ export const getExternalServer = async (
   method : string = 'GET',
   body : any = null) => {
   let headers : Record<string, string> = {
-    Accept: 'application/activity+json, application/id+json',
-    Host: baseUrl.toString(),
-    Date: new Date().toISOString()
+    Accept: 'application/activity+json, application/ld+json',
+    Host: baseUrl.hostname,
+    Date: new Date().toUTCString()
   };
 
   if (method === 'POST' && body) {
@@ -26,8 +26,9 @@ export const getExternalServer = async (
 
     const privateKey: string = await decryptPrivateKey(requestingActorEncryptedPrivateKey!)
 
+    const fullUrl = path ? new URL(path, baseUrl) : baseUrl;
     headers = signRequest(
-      new URL(baseUrl, path),
+      fullUrl,
       method,
       headers,
       privateKey,
@@ -45,7 +46,15 @@ export const getExternalServer = async (
     fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
   }
 
-  return await fetch(`${baseUrl + path}`, fetchOptions);
+  const fullUrl = path ? new URL(path, baseUrl).toString() : baseUrl.toString();
+  
+  const response = await fetch(fullUrl, fetchOptions);
+    
+  if (!response.ok) {
+    const responseText = await response.text();
+    throw new Error(`Failed to fetch from ${baseUrl + path}: ${response.statusText}`);
+  }
+  return response;
 
 }
 
@@ -57,23 +66,30 @@ export const signRequest = (
   actorUrl: URL,
   body?: any
 ): Record<string, string> => {
+  const normalizedHeaders: Record<string, string> = {};
+  Object.keys(headers).forEach(key => {
+    normalizedHeaders[key.toLowerCase()] = headers[key];
+  });
+  
+  normalizedHeaders['user-agent'] = 'SnapCore/1.0';
+  
   const signingHeaders = ['(request-target)', 'host', 'date'];
   
   if (method === 'POST' && body) {
     const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
     const digest = crypto.createHash('sha256').update(bodyString).digest('base64');
-    headers['Digest'] = `SHA-256=${digest}`;
+    normalizedHeaders['digest'] = `SHA-256=${digest}`;
     signingHeaders.push('digest');
   }
 
-  const requestTarget = `${method.toLowerCase()} ${url.pathname}`;
+  const requestTarget = `${method.toLowerCase()} ${url.pathname}${url.search || ''}`;
 
   const signatureBase = signingHeaders
     .map((header) => {
       if (header === '(request-target)') {
         return `(request-target): ${requestTarget}`;
       }
-      return `${header}: ${headers[header]}`;
+      return `${header}: ${normalizedHeaders[header]}`;
     })
     .join('\n');
 
@@ -83,9 +99,15 @@ export const signRequest = (
 
   const signature = signer.sign(privateKeyPem, 'base64');
 
-  headers['Signature'] = `keyId="${actorUrl}#main-key",algorithm="rsa-sha256",headers="${signingHeaders.join(' ')}",signature="${signature}"`;
+  
+  const finalHeaders = { ...headers };
+  finalHeaders['User-Agent'] = 'SnapCore/1.0';
+  if (normalizedHeaders['digest']) {
+    finalHeaders['Digest'] = normalizedHeaders['digest'];
+  }  
+  finalHeaders['Signature'] = `keyId="${actorUrl}#main-key",algorithm="rsa-sha256",headers="${signingHeaders.join(' ')}",signature="${signature}"`;
 
-  return headers;
+  return finalHeaders;
 }
 
 

@@ -4,6 +4,7 @@ import Post from '../types/post';
 import Like from '../types/likes';
 import Follow from '../types/follow';
 import {addGraphFollow, removeGraphFollow} from "../services/neo4jProxyService";
+import { URLS } from '../config/urls';
 
 const extractActorId = (actorField: string | { [key: string]: any }): string => {
   if (typeof actorField === 'string') return actorField;
@@ -19,16 +20,24 @@ const sendAcceptFollow = async (
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     const actorId = extractActorId(actorField);
-
     const actorRes = await fetch(actorId, {
-      headers: { Accept: 'application/activity+json' }
+      headers: { 
+        'Content-Type': 'application/activity+json',
+        'Accept': 'application/activity+json, application/id+json'
+      },
     });
 
     if (!actorRes.ok) {
       return { success: false, error: `Failed to fetch actor: ${actorRes.statusText}` };
     }
 
-    const actorData = await actorRes.json() as { inbox: string };
+    let actorData;
+    try {
+      actorData = await actorRes.json() as { inbox: string };
+    } catch (parseError) {
+      return { success: false, error: 'Actor response is not valid JSON' + actorRes };
+    }
+
     const inboxUrl = actorData.inbox;
 
     if (!inboxUrl) {
@@ -37,7 +46,7 @@ const sendAcceptFollow = async (
 
     const acceptActivity = {
       '@context': 'https://www.w3.org/ns/activitystreams',
-      id: `https://snapcore.subspace/activities/${uuidv4()}`,
+      id: `${URLS.BACKEND_BASE}/activities/${uuidv4()}`,
       type: 'Accept',
       actor: object,
       object: {
@@ -50,12 +59,21 @@ const sendAcceptFollow = async (
 
     const res = await fetch(inboxUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/activity+json' },
+      headers: { 
+        'Content-Type': 'application/activity+json',
+        'Accept': 'application/activity+json, application/id+json'
+      },
       body: JSON.stringify(acceptActivity)
     });
 
     if (!res.ok) {
-      return { success: false, error: `Failed to send Accept: ${res.statusText}` };
+      let errorText;
+      try {
+        errorText = await res.text();
+      } catch (textError) {
+        errorText = 'Could not read error response';
+      }
+      return { success: false, error: `Failed to send Accept: ${res.statusText} - ${errorText}` };
     }
 
     return { success: true };
@@ -67,8 +85,9 @@ const sendAcceptFollow = async (
 
 export const handleInboxPost = async (req: Request, res: Response) => {
   try {
-    const {recipient, activity} = req.body;
-    if (!activity.type || !activity.actor || !activity.object) {
+    const recipient = req.body?.object || {};
+    const activity = {...req.body};
+    if (!activity?.type || !activity?.actor || !activity?.object) {
       return res.status(400).json({ message: 'Invalid ActivityPub object' });
     }
 
@@ -158,6 +177,18 @@ export const handleInboxPost = async (req: Request, res: Response) => {
       const object = activity.object;
       if (!object) {
         return res.status(400).json({ message: 'Missing object in Follow activity' });
+      }
+
+      try {
+        new URL(object);
+      } catch (urlError) {
+        return res.status(400).json({ message: 'Invalid object URL format in Follow activity' });
+      }
+
+      try {
+        new URL(actor);
+      } catch (urlError) {
+        return res.status(400).json({ message: 'Invalid actor URL format in Follow activity' });
       }
 
       const alreadyFollowing = await Follow.findOne({ actor, object });

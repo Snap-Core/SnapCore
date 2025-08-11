@@ -6,7 +6,8 @@ import {
   getUserByUsername,
   getAllUsers, 
   searchUsers,
-  getExternalUserFromUsername
+  getExternalUserFromUsername,
+  getPublicUserProfile
 } from "../controller/userController";
 import { requireAuth } from "../middleware/authMiddleware";
 
@@ -24,6 +25,8 @@ router.get("/search", searchUsers);
 
 router.get("/", requireAuth, getAllUsers);
 
-router.get("/:username", requireAuth, getUserByUsername);
+router.get("/profile/:username", requireAuth, getUserByUsername);
+
+router.get("/:username", getPublicUserProfile);
 
 export default router;

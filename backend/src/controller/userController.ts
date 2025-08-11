@@ -56,6 +56,62 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
+export const getPublicUserProfile = async (req: Request, res: Response) => {
+  const username = req.params.username;
+  if (!username) {
+    return res.status(400).json({ error: "Username is required" });
+  }
+
+  try {
+    const user = await findUserByUsername(username);
+    
+    if (!user || !user.activated) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const acceptHeader = req.headers.accept || '';
+    const isActivityPubRequest = acceptHeader.includes('application/activity+json') || 
+                                acceptHeader.includes('application/ld+json');
+
+    if (isActivityPubRequest) {
+      const actorObject = {
+        '@context': [
+          'https://www.w3.org/ns/activitystreams',
+          'https://w3id.org/security/v1'
+        ],
+        id: `${backendServerUrl}users/${username}`,
+        type: 'Person',
+        preferredUsername: username,
+        name: user.displayName || username,
+        summary: user.summary || '',
+        inbox: `${backendServerUrl}users/${username}/inbox`,
+        outbox: `${backendServerUrl}users/${username}/outbox`,
+        followers: `${backendServerUrl}users/${username}/followers`,
+        following: `${backendServerUrl}users/${username}/following`,
+        icon: user.profilePic ? {
+          type: 'Image',
+          mediaType: 'image/jpeg',
+          url: user.profilePic.startsWith('http') ? user.profilePic : `${backendServerUrl}${user.profilePic}`
+        } : undefined,
+        publicKey: {
+          id: `${backendServerUrl}users/${username}#main-key`,
+          owner: `${backendServerUrl}users/${username}`,
+          publicKeyPem: user.publicKey
+        }
+      };
+
+      res.setHeader('Content-Type', 'application/activity+json');
+      return res.json(actorObject);
+    } else {
+      const { id, email, ...rest } = user;
+      return res.json({...rest, fediverseId: `${backendServerUrl}users/${username}`} as User);
+    }
+  } catch (error) {
+    console.error("Error fetching user by username:", error);
+    res.status(500).json({ error: "Failed to fetch user" });
+  }
+};
+
 export const getUserByUsername = async (req: Request, res: Response) => {
   const username = req.params.username;
   if (!username) {
