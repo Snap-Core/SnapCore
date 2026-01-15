@@ -77,7 +77,8 @@ export const FollowProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       );
       setFollowers(followerSet);
     } catch (error) {
-      showToast(`Error fetching follow data`, "error");
+      throw new Error(`Error fetching follow data`);
+
     }
   }, [currentUser?.username, showToast]);
 
